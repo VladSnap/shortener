@@ -19,7 +19,9 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if req.Header.Get("content-type") != "text/plain" {
+	ct := req.Header.Get("content-type")
+
+	if ct != "text/plain" && ct != "text/plain; charset=utf-8" {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 		return
 	}
