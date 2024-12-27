@@ -35,6 +35,7 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 
 	shortLink := data.CreateShortLink(string(body))
 
+	res.WriteHeader(http.StatusCreated)
 	res.Header().Set("content-type", "text/plain")
 	res.Write([]byte("http://localhost:8080/" + shortLink))
 }

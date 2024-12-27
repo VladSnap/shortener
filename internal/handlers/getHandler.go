@@ -22,5 +22,5 @@ func GetHandler(res http.ResponseWriter, req *http.Request) {
 	url := data.GetURL(id)
 
 	res.Header().Set("Location", url)
-	http.Redirect(res, req, url, http.StatusMovedPermanently)
+	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
 }
