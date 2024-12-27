@@ -19,7 +19,7 @@ func GetHandler(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 	}
 
-	url := data.GetUrl(id)
+	url := data.GetURL(id)
 
 	res.Header().Set("Location", url)
 	http.Redirect(res, req, url, http.StatusMovedPermanently)

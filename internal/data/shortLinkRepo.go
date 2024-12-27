@@ -14,6 +14,6 @@ func CreateShortLink(url string) string {
 	return key
 }
 
-func GetUrl(key string) string {
+func GetURL(key string) string {
 	return links[key]
 }
