@@ -4,16 +4,29 @@ import (
 	"github.com/VladSnap/shortener/internal/helpers"
 )
 
+type ShortLinkRepo interface {
+	CreateShortLink(url string) string
+	GetURL(key string) string
+}
+
+type InMemoryShortLinkRepo struct {
+	links map[string]string
+}
+
 const linkKeyLength = 8
 
-var links map[string]string = make(map[string]string)
+func NewShortLinkRepo() *InMemoryShortLinkRepo {
+	repo := new(InMemoryShortLinkRepo)
+	repo.links = make(map[string]string)
+	return repo
+}
 
-func CreateShortLink(url string) string {
+func (repo *InMemoryShortLinkRepo) CreateShortLink(url string) string {
 	key := helpers.RandStringRunes(linkKeyLength)
-	links[key] = url
+	repo.links[key] = url
 	return key
 }
 
-func GetURL(key string) string {
-	return links[key]
+func (repo *InMemoryShortLinkRepo) GetURL(key string) string {
+	return repo.links[key]
 }

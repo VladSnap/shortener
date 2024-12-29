@@ -7,7 +7,17 @@ import (
 	"github.com/VladSnap/shortener/internal/data"
 )
 
-func GetHandler(res http.ResponseWriter, req *http.Request) {
+type GetHandler struct {
+	shortLinkRepo data.ShortLinkRepo
+}
+
+func NewGetHandler(repo data.ShortLinkRepo) *GetHandler {
+	handler := new(GetHandler)
+	handler.shortLinkRepo = repo
+	return handler
+}
+
+func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 		return
@@ -19,7 +29,7 @@ func GetHandler(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 	}
 
-	url := data.GetURL(id)
+	url := handler.shortLinkRepo.GetURL(id)
 
 	res.Header().Set("Location", url)
 	http.Redirect(res, req, url, http.StatusTemporaryRedirect)

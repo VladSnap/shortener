@@ -8,7 +8,17 @@ import (
 	"github.com/VladSnap/shortener/internal/data"
 )
 
-func PostHandler(res http.ResponseWriter, req *http.Request) {
+type PostHandler struct {
+	shortLinkRepo data.ShortLinkRepo
+}
+
+func NewPostHandler(repo data.ShortLinkRepo) *PostHandler {
+	handler := new(PostHandler)
+	handler.shortLinkRepo = repo
+	return handler
+}
+
+func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 		return
@@ -28,14 +38,14 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 
 	body, err := io.ReadAll(req.Body)
 
-	if err != nil {
+	if err != nil || string(body) == "" {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	shortLink := data.CreateShortLink(string(body))
+	shortLink := handler.shortLinkRepo.CreateShortLink(string(body))
 
+	res.Header().Add("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
-	res.Header().Set("content-type", "text/plain")
 	res.Write([]byte("http://localhost:8080/" + shortLink))
 }

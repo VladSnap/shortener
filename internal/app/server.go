@@ -4,6 +4,7 @@ import (
 	//"fmt"
 	"net/http"
 
+	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/handlers"
 )
 
@@ -13,9 +14,13 @@ func RunServer() error {
 }
 
 func initServer() *http.ServeMux {
+	shortLinkRepo := data.NewShortLinkRepo()
+	getHandler := handlers.NewGetHandler(shortLinkRepo)
+	postHandler := handlers.NewPostHandler(shortLinkRepo)
+
 	mux := http.NewServeMux()
-	mux.HandleFunc(`/`, handlers.PostHandler)
-	mux.HandleFunc(`/{id}`, handlers.GetHandler)
+	mux.HandleFunc(`/`, postHandler.Handle)
+	mux.HandleFunc(`/{id}`, getHandler.Handle)
 
 	return mux
 }
