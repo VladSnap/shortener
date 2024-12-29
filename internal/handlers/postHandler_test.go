@@ -118,9 +118,9 @@ func TestPostHandler(t *testing.T) {
 			resBody, _ := io.ReadAll(res.Body)
 			defer res.Body.Close()
 
-			shortUrl := string(resBody)
+			shortURL := string(resBody)
 			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"), "Incorrect header content-type")
-			assert.Equal(t, tt.want.responseBody, shortUrl, "Incorrect response short url")
+			assert.Equal(t, tt.want.responseBody, shortURL, "Incorrect response short url")
 		})
 	}
 }
