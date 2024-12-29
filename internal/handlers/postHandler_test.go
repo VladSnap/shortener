@@ -16,7 +16,7 @@ type MockShortLinkRepo struct {
 	mock.Mock
 }
 
-const baseUrl string = "http://localhost:8080/"
+const baseURL string = "http://localhost:8080/"
 
 func TestPostHandler(t *testing.T) {
 	type want struct {
@@ -28,27 +28,27 @@ func TestPostHandler(t *testing.T) {
 		name        string
 		httpMethod  string
 		requestPath string
-		sourceUrl   string
-		shortId     string
+		sourceURL   string
+		shortID     string
 		want        want
 	}{
 		{
 			name:        "positive test #1",
-			sourceUrl:   "http://test.url",
+			sourceURL:   "http://test.url",
 			requestPath: "/",
 			httpMethod:  http.MethodPost,
-			shortId:     "fVdpTFBo",
+			shortID:     "fVdpTFBo",
 			want: want{
 				code:         201,
 				contentType:  "text/plain",
-				responseBody: baseUrl + "fVdpTFBo",
+				responseBody: baseURL + "fVdpTFBo",
 			},
 		}, {
 			name:        "request body is empty",
 			httpMethod:  http.MethodPost,
 			requestPath: "/",
-			sourceUrl:   "",
-			shortId:     "sKbYvAgT",
+			sourceURL:   "",
+			shortID:     "sKbYvAgT",
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
@@ -58,8 +58,8 @@ func TestPostHandler(t *testing.T) {
 			name:        "http method not corrected",
 			httpMethod:  http.MethodGet,
 			requestPath: "/",
-			sourceUrl:   "",
-			shortId:     "sVpHyErn",
+			sourceURL:   "",
+			shortID:     "sVpHyErn",
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
@@ -67,10 +67,10 @@ func TestPostHandler(t *testing.T) {
 			},
 		}, {
 			name:        "request path not correct #1",
-			sourceUrl:   "http://test3.url",
+			sourceURL:   "http://test3.url",
 			requestPath: "//",
 			httpMethod:  http.MethodPost,
-			shortId:     "rDlUpOnb",
+			shortID:     "rDlUpOnb",
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
@@ -78,10 +78,10 @@ func TestPostHandler(t *testing.T) {
 			},
 		}, {
 			name:        "request path not correct #2",
-			sourceUrl:   "http://test4.url",
+			sourceURL:   "http://test4.url",
 			requestPath: "/foo",
 			httpMethod:  http.MethodPost,
-			shortId:     "rDlUpOnb",
+			shortID:     "rDlUpOnb",
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
@@ -89,10 +89,10 @@ func TestPostHandler(t *testing.T) {
 			},
 		}, {
 			name:        "request path not correct #3",
-			sourceUrl:   "http://test5.url",
+			sourceURL:   "http://test5.url",
 			requestPath: "/foo/bar",
 			httpMethod:  http.MethodPost,
-			shortId:     "rDlUpOnb",
+			shortID:     "rDlUpOnb",
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
@@ -106,9 +106,9 @@ func TestPostHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			shortLinkRepo.On("CreateShortLink", tt.sourceUrl).Return(tt.shortId)
+			shortLinkRepo.On("CreateShortLink", tt.sourceURL).Return(tt.shortID)
 
-			r := strings.NewReader(tt.sourceUrl)
+			r := strings.NewReader(tt.sourceURL)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)
 			postRequest.Header.Add("Content-Type", "text/plain; charset=utf-8")
 			w := httptest.NewRecorder()
