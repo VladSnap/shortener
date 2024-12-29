@@ -3,6 +3,7 @@ package handlers
 import (
 	//"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/VladSnap/shortener/internal/data"
 )
@@ -24,12 +25,17 @@ func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	}
 
 	id := req.PathValue("id")
+	pathegmentCount := len(strings.Split(req.URL.Path, "/"))
 
-	if id == "" {
+	if id == "" || pathegmentCount <= 1 || pathegmentCount > 2 {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 	}
 
 	url := handler.shortLinkRepo.GetURL(id)
+
+	if url == "" {
+		http.Error(res, "Bad Request", http.StatusBadRequest)
+	}
 
 	res.Header().Set("Location", url)
 	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
