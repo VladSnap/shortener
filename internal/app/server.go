@@ -5,10 +5,11 @@ import (
 
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-"github.com/go-chi/chi/v5/middleware"
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/handlers"
+	"github.com/VladSnap/shortener/internal/middlewares"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func RunServer() error {
@@ -22,8 +23,9 @@ func initServer() *chi.Mux {
 	postHandler := handlers.NewPostHandler(shortLinkRepo)
 
 	r := chi.NewRouter()
+	r.Use(middlewares.TimerTrace)
 	r.Use(middleware.Logger)
-    r.Use(middleware.Recoverer)
+	r.Use(middleware.Recoverer)
 
 	r.Post("/", postHandler.Handle)
 	r.Get("/{id}", getHandler.Handle)
