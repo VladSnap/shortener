@@ -1,7 +1,7 @@
 package config
 
 import (
-	flag "github.com/spf13/pflag"
+	"flag"
 )
 
 type Options struct {
