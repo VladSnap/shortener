@@ -16,7 +16,7 @@ type MockShortLinkRepo struct {
 	mock.Mock
 }
 
-const baseURL string = "http://localhost:8080/"
+const baseURL string = "http://localhost:8080"
 
 func TestPostHandler(t *testing.T) {
 	type want struct {
@@ -41,7 +41,7 @@ func TestPostHandler(t *testing.T) {
 			want: want{
 				code:         201,
 				contentType:  "text/plain",
-				responseBody: baseURL + "fVdpTFBo",
+				responseBody: baseURL + "/fVdpTFBo",
 			},
 		}, {
 			name:        "request body is empty",
