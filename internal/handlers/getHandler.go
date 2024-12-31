@@ -29,12 +29,14 @@ func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 
 	if id == "" || pathegmentCount <= 1 || pathegmentCount > 2 {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
+		return
 	}
 
 	url := handler.shortLinkRepo.GetURL(id)
 
 	if url == "" {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
+		return
 	}
 
 	res.Header().Set("Location", url)
