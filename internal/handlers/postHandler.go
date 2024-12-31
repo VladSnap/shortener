@@ -10,11 +10,13 @@ import (
 
 type PostHandler struct {
 	shortLinkRepo data.ShortLinkRepo
+	baseURL       string
 }
 
-func NewPostHandler(repo data.ShortLinkRepo) *PostHandler {
+func NewPostHandler(repo data.ShortLinkRepo, baseURL string) *PostHandler {
 	handler := new(PostHandler)
 	handler.shortLinkRepo = repo
+	handler.baseURL = baseURL
 	return handler
 }
 
@@ -47,5 +49,5 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Add("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
-	res.Write([]byte("http://localhost:8080/" + shortLink))
+	res.Write([]byte(handler.baseURL + shortLink))
 }

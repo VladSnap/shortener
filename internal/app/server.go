@@ -5,6 +5,7 @@ import (
 
 	"net/http"
 
+	"github.com/VladSnap/shortener/internal/config"
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/handlers"
 	"github.com/VladSnap/shortener/internal/middlewares"
@@ -12,15 +13,15 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func RunServer() error {
-	var httpListener = initServer()
-	return http.ListenAndServe(`:8080`, httpListener)
+func RunServer(opts *config.Options) error {
+	var httpListener = initServer(opts)
+	return http.ListenAndServe(opts.ListenAddress, httpListener)
 }
 
-func initServer() *chi.Mux {
+func initServer(opts *config.Options) *chi.Mux {
 	shortLinkRepo := data.NewShortLinkRepo()
 	getHandler := handlers.NewGetHandler(shortLinkRepo)
-	postHandler := handlers.NewPostHandler(shortLinkRepo)
+	postHandler := handlers.NewPostHandler(shortLinkRepo, opts.BaseURL)
 
 	r := chi.NewRouter()
 	r.Use(middlewares.TimerTrace)
