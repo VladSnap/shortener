@@ -17,9 +17,9 @@ func ParseFlags() *Options {
 
 	flag.Parse()
 
-	runesBaseUrl := []rune(opts.BaseURL)
+	runesBaseURL := []rune(opts.BaseURL)
 
-	if string(runesBaseUrl[len(runesBaseUrl)-1:]) == "/" {
+	if string(runesBaseURL[len(runesBaseURL)-1:]) == "/" {
 		panic("Incorrect -b argument. Don't put a slash at the end")
 	}
 
