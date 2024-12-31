@@ -49,5 +49,5 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Add("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
-	res.Write([]byte(handler.baseURL + shortLink))
+	res.Write([]byte(handler.baseURL + "/" + shortLink))
 }
