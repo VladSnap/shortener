@@ -2,11 +2,23 @@ package config
 
 import (
 	"flag"
+	"fmt"
+	"log"
+
+	"github.com/caarlos0/env/v6"
 )
 
 type Options struct {
-	ListenAddress string // server listen address
-	BaseURL       string // base url for short url
+	ListenAddress string `env:"SERVER_ADDRESS"` // server listen address
+	BaseURL       string `env:"BASE_URL"`       // base url for short url
+}
+
+func LoadConfig() *Options {
+	opts := ParseFlags()
+	ParseEnvConfig(opts)
+
+	fmt.Printf("Config loaded: %+v\n", opts)
+	return opts
 }
 
 func ParseFlags() *Options {
@@ -24,4 +36,12 @@ func ParseFlags() *Options {
 	}
 
 	return opts
+}
+
+func ParseEnvConfig(opts *Options) {
+	err := env.Parse(opts)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 }

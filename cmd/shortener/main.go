@@ -10,7 +10,7 @@ import (
 
 func main() {
 	fmt.Println("Args:", os.Args)
-	opts := config.ParseFlags()
+	opts := config.LoadConfig()
 	err := app.RunServer(opts)
 	if err != nil {
 		panic(err)
