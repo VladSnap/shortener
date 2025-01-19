@@ -13,7 +13,7 @@ func (vld *OptionsValidator) Validate(opts *config.Options) error {
 	runesBaseURL := []rune(opts.BaseURL)
 
 	if string(runesBaseURL[len(runesBaseURL)-1:]) == "/" {
-		return errors.New("Incorrect -b argument. Don't put a slash at the end")
+		return errors.New("incorrect -b argument, don't put a slash at the end")
 	}
 
 	return nil
