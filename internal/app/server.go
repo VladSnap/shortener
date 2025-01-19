@@ -6,30 +6,49 @@ import (
 	"net/http"
 
 	"github.com/VladSnap/shortener/internal/config"
-	"github.com/VladSnap/shortener/internal/data"
-	"github.com/VladSnap/shortener/internal/handlers"
 	"github.com/VladSnap/shortener/internal/middlewares"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func RunServer(opts *config.Options) error {
-	var httpListener = initServer(opts)
-	return http.ListenAndServe(opts.ListenAddress, httpListener)
+type Handler interface {
+	Handle(res http.ResponseWriter, req *http.Request)
 }
 
-func initServer(opts *config.Options) *chi.Mux {
-	shortLinkRepo := data.NewShortLinkRepo()
-	getHandler := handlers.NewGetHandler(shortLinkRepo)
-	postHandler := handlers.NewPostHandler(shortLinkRepo, opts.BaseURL)
+type ShortenerServer interface {
+	RunServer() error
+}
 
+type ChiShortenerServer struct {
+	opts        *config.Options
+	postHandler Handler
+	getHandler  Handler
+}
+
+func NewChiShortenerServer(opts *config.Options,
+	postHandler Handler,
+	getHandler Handler) *ChiShortenerServer {
+
+	server := new(ChiShortenerServer)
+	server.opts = opts
+	server.postHandler = postHandler
+	server.getHandler = getHandler
+	return server
+}
+
+func (server *ChiShortenerServer) RunServer() error {
+	var httpListener = server.initServer()
+	return http.ListenAndServe(server.opts.ListenAddress, httpListener)
+}
+
+func (server *ChiShortenerServer) initServer() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middlewares.TimerTrace)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Post("/", postHandler.Handle)
-	r.Get("/{id}", getHandler.Handle)
+	r.Post("/", server.postHandler.Handle)
+	r.Get("/{id}", server.getHandler.Handle)
 
 	return r
 }
