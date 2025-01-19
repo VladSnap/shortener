@@ -5,7 +5,7 @@ import (
 )
 
 type ShortLinkRepo interface {
-	CreateShortLink(url string) string
+	CreateShortLink(url string) (string, error)
 	GetURL(key string) string
 }
 
@@ -21,10 +21,13 @@ func NewShortLinkRepo() *InMemoryShortLinkRepo {
 	return repo
 }
 
-func (repo *InMemoryShortLinkRepo) CreateShortLink(url string) string {
-	key := helpers.RandStringRunes(linkKeyLength)
+func (repo *InMemoryShortLinkRepo) CreateShortLink(url string) (string, error) {
+	key, err := helpers.RandStringRunes(linkKeyLength)
+	if err != nil {
+		return "", err
+	}
 	repo.links[key] = url
-	return key
+	return key, nil
 }
 
 func (repo *InMemoryShortLinkRepo) GetURL(key string) string {

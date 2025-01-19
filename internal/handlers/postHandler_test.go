@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -98,15 +99,27 @@ func TestPostHandler(t *testing.T) {
 				contentType:  "text/plain; charset=utf-8",
 				responseBody: "Bad Request\n",
 			},
+		}, {
+			name:        "internal server error",
+			sourceURL:   "http://test6.url",
+			requestPath: "/",
+			httpMethod:  http.MethodPost,
+			shortID:     "fbUhNtPv",
+			want: want{
+				code:         500,
+				contentType:  "text/plain; charset=utf-8",
+				responseBody: "Internal Server Error\n",
+			},
 		},
 	}
 
 	shortLinkRepo := new(MockShortLinkRepo)
 	postHandler := NewPostHandler(shortLinkRepo, baseURL)
+	shortLinkRepo.On("CreateShortLink", "http://test6.url").Return("", errors.New("random fail"))
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			shortLinkRepo.On("CreateShortLink", tt.sourceURL).Return(tt.shortID)
+			shortLinkRepo.On("CreateShortLink", tt.sourceURL).Return(tt.shortID, nil)
 
 			r := strings.NewReader(tt.sourceURL)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)
@@ -125,9 +138,9 @@ func TestPostHandler(t *testing.T) {
 	}
 }
 
-func (repo *MockShortLinkRepo) CreateShortLink(url string) string {
+func (repo *MockShortLinkRepo) CreateShortLink(url string) (string, error) {
 	args := repo.Called(url)
-	return args.String(0)
+	return args.String(0), args.Error(1)
 }
 
 func (repo *MockShortLinkRepo) GetURL(key string) string {

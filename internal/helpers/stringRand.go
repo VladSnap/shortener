@@ -1,15 +1,21 @@
 package helpers
 
 import (
-	"math/rand"
+	crypto "crypto/rand"
+	"math/big"
 )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func RandStringRunes(n int) string {
+func RandStringRunes(n int) (string, error) {
 	b := make([]rune, n)
-    for i := range b {
-        b[i] = letters[rand.Intn(len(letters))]
-    }
-    return string(b)
+    maxLetters := big.NewInt(int64(len(letters)))
+	for i := range b {
+        rndIndex, err := crypto.Int(crypto.Reader, maxLetters)
+        if err != nil {
+            return "", err
+        }
+		b[i] = letters[rndIndex.Int64()]
+	}
+	return string(b), nil
 }

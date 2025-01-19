@@ -45,7 +45,12 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortLink := handler.shortLinkRepo.CreateShortLink(string(body))
+	shortLink, err := handler.shortLinkRepo.CreateShortLink(string(body))
+
+	if err != nil {
+		http.Error(res, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 
 	res.Header().Add("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
