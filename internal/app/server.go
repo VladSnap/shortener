@@ -43,8 +43,8 @@ func (server *ChiShortenerServer) RunServer() error {
 
 func (server *ChiShortenerServer) initServer() *chi.Mux {
 	r := chi.NewRouter()
-	r.Use(middlewares.TimerTrace)
-	r.Use(middleware.Logger)
+	r.Use(middlewares.LogMiddleware)
+	//r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
 	r.Post("/", server.postHandler.Handle)

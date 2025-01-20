@@ -2,8 +2,8 @@ package config
 
 import (
 	"flag"
-	"fmt"
 
+	"github.com/VladSnap/shortener/internal/log"
 	"github.com/caarlos0/env/v6"
 )
 
@@ -26,7 +26,7 @@ func LoadConfig(validater ConfigValidater) (*Options, error) {
 		return nil, err
 	}
 
-	fmt.Printf("Config loaded: %+v\n", opts)
+	log.Zap.Infof("Config loaded: %+v\n", opts)
 	return opts, nil
 }
 

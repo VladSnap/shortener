@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/VladSnap/shortener/internal/app"
@@ -9,10 +8,15 @@ import (
 	"github.com/VladSnap/shortener/internal/config/validation"
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/handlers"
+	"github.com/VladSnap/shortener/internal/log"
+	"go.uber.org/zap"
 )
 
 func main() {
-	fmt.Println("Run shorneter server. Args:", os.Args)
+	defer log.Zap.Sync()
+
+	log.Zap.Info("run shorneter server", zap.Strings("Args", os.Args))
+
 	confValidator := &validation.OptionsValidator{}
 	opts, err := config.LoadConfig(confValidator)
 	if err != nil {
