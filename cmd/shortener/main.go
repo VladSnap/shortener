@@ -35,8 +35,10 @@ func main() {
 func createServer(opts *config.Options) app.ShortenerServer {
 	shortLinkRepo := data.NewShortLinkRepo()
 	shorterService := services.NewNaiveShorterService(shortLinkRepo)
-	getHandler := handlers.NewGetHandler(shorterService)
 	postHandler := handlers.NewPostHandler(shorterService, opts.BaseURL)
-	server := app.NewChiShortenerServer(opts, postHandler, getHandler)
+	getHandler := handlers.NewGetHandler(shorterService)
+	shortenHandler := handlers.NewShortenHandler(shorterService, opts.BaseURL)
+
+	server := app.NewChiShortenerServer(opts, postHandler, getHandler, shortenHandler)
 	return server
 }
