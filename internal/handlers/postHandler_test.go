@@ -45,6 +45,17 @@ func TestPostHandler(t *testing.T) {
 				responseBody: baseURL + "/fVdpTFBo",
 			},
 		}, {
+			name:        "request url invalid",
+			httpMethod:  http.MethodPost,
+			requestPath: "/",
+			sourceURL:   "google.com",
+			shortID:     "sKbYvAgT",
+			want: want{
+				code:         400,
+				contentType:  "text/plain; charset=utf-8",
+				responseBody: "Bad Request\n",
+			},
+		}, {
 			name:        "request body is empty",
 			httpMethod:  http.MethodPost,
 			requestPath: "/",

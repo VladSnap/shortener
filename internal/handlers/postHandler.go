@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/VladSnap/shortener/internal/data"
+	urlverifier "github.com/davidmytton/url-verifier"
 )
 
 type PostHandler struct {
@@ -39,13 +40,21 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	}
 
 	body, err := io.ReadAll(req.Body)
+	urlValue := string(body)
 
-	if err != nil || string(body) == "" {
+	if err != nil || urlValue == "" {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	shortLink, err := handler.shortLinkRepo.CreateShortLink(string(body))
+	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(urlValue)
+
+	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
+		http.Error(res, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	shortLink, err := handler.shortLinkRepo.CreateShortLink(urlValue)
 
 	if err != nil {
 		http.Error(res, "Internal Server Error", http.StatusInternalServerError)
