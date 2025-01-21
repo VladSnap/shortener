@@ -40,21 +40,21 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	}
 
 	body, err := io.ReadAll(req.Body)
-	fullUrl := string(body)
+	fullURL := string(body)
 
-	if err != nil || fullUrl == "" {
+	if err != nil || fullURL == "" {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(fullUrl)
+	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(fullURL)
 
 	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	shortLink, err := handler.service.CreateShortLink(fullUrl)
+	shortLink, err := handler.service.CreateShortLink(fullURL)
 
 	if err != nil {
 		http.Error(res, "Internal Server Error", http.StatusInternalServerError)

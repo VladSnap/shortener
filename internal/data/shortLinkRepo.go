@@ -1,7 +1,7 @@
 package data
 
 type ShortLinkRepo interface {
-	CreateShortLink(shortID string, fullUrl string) error
+	CreateShortLink(shortID string, fullURL string) error
 	GetURL(shortID string) string
 }
 
@@ -15,8 +15,8 @@ func NewShortLinkRepo() *InMemoryShortLinkRepo {
 	return repo
 }
 
-func (repo *InMemoryShortLinkRepo) CreateShortLink(shortID string, fullUrl string) error {
-	repo.links[shortID] = fullUrl
+func (repo *InMemoryShortLinkRepo) CreateShortLink(shortID string, fullURL string) error {
+	repo.links[shortID] = fullURL
 	return nil
 }
 

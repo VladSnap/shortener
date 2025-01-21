@@ -74,8 +74,8 @@ func TestNaiveShortenService_GetURL(t *testing.T) {
 	}
 }
 
-func (repo *MockShortLinkRepo) CreateShortLink(shortID string, fullUrl string) error {
-	args := repo.Called(shortID, fullUrl)
+func (repo *MockShortLinkRepo) CreateShortLink(shortID string, fullURL string) error {
+	args := repo.Called(shortID, fullURL)
 	return args.Error(0)
 }
 

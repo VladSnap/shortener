@@ -6,7 +6,7 @@ import (
 )
 
 type ShorterService interface {
-	CreateShortLink(fullUrl string) (string, error)
+	CreateShortLink(fullURL string) (string, error)
 	GetURL(shortID string) string
 }
 
@@ -22,13 +22,13 @@ func NewNaiveShorterService(repo data.ShortLinkRepo) *NaiveShorterService {
 
 const shortIDLength = 8
 
-func (service *NaiveShorterService) CreateShortLink(fullUrl string) (string, error) {
+func (service *NaiveShorterService) CreateShortLink(fullURL string) (string, error) {
 	shortID, err := helpers.RandStringRunes(shortIDLength)
 	if err != nil {
 		return "", err
 	}
 
-	err = service.shortLinkRepo.CreateShortLink(shortID, fullUrl)
+	err = service.shortLinkRepo.CreateShortLink(shortID, fullURL)
 	if err != nil {
 		return "", err
 	}
