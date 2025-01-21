@@ -10,7 +10,7 @@ import (
 )
 
 type ShortenRequest struct {
-	Url string `json:"url"`
+	URL string `json:"url"`
 }
 
 type ShortenResponse struct {
@@ -49,19 +49,19 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 		return
 	}
 
-	if request.Url == "" {
+	if request.URL == "" {
 		http.Error(res, "Required url", http.StatusBadRequest)
 		return
 	}
 
-	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(request.Url)
+	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(request.URL)
 
 	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	shortLink, err := handler.service.CreateShortLink(request.Url)
+	shortLink, err := handler.service.CreateShortLink(request.URL)
 
 	if err != nil {
 		http.Error(res, "Internal Server Error", http.StatusInternalServerError)

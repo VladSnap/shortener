@@ -95,7 +95,7 @@ func TestShortenHandler(t *testing.T) {
 			mockService.On("CreateShortLink", tt.sourceURL).Return(tt.shortID, nil)
 
 			requestData := ShortenRequest{
-				Url: tt.sourceURL,
+				URL: tt.sourceURL,
 			}
 			rqBytes, err := json.Marshal(requestData)
 			if err != nil {
