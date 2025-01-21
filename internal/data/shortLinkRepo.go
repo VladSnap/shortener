@@ -1,19 +1,13 @@
 package data
 
-import (
-	"github.com/VladSnap/shortener/internal/helpers"
-)
-
 type ShortLinkRepo interface {
-	CreateShortLink(url string) (string, error)
-	GetURL(key string) string
+	CreateShortLink(shortID string, fullUrl string) error
+	GetURL(shortID string) string
 }
 
 type InMemoryShortLinkRepo struct {
 	links map[string]string
 }
-
-const linkKeyLength = 8
 
 func NewShortLinkRepo() *InMemoryShortLinkRepo {
 	repo := new(InMemoryShortLinkRepo)
@@ -21,15 +15,11 @@ func NewShortLinkRepo() *InMemoryShortLinkRepo {
 	return repo
 }
 
-func (repo *InMemoryShortLinkRepo) CreateShortLink(url string) (string, error) {
-	key, err := helpers.RandStringRunes(linkKeyLength)
-	if err != nil {
-		return "", err
-	}
-	repo.links[key] = url
-	return key, nil
+func (repo *InMemoryShortLinkRepo) CreateShortLink(shortID string, fullUrl string) error {
+	repo.links[shortID] = fullUrl
+	return nil
 }
 
-func (repo *InMemoryShortLinkRepo) GetURL(key string) string {
-	return repo.links[key]
+func (repo *InMemoryShortLinkRepo) GetURL(shortID string) string {
+	return repo.links[shortID]
 }

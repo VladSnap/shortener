@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -116,12 +117,12 @@ func TestGetHandler(t *testing.T) {
 		},
 	}
 
-	shortLinkRepo := new(MockShortLinkRepo)
-	getHandler := NewGetHandler(shortLinkRepo)
+	mockService := new(MockShorterService)
+	getHandler := NewGetHandler(mockService)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			shortLinkRepo.On("GetURL", tt.id).Return(tt.url)
+			mockService.On("GetURL", tt.id).Return(tt.url)
 
 			request := httptest.NewRequest(tt.httpMethod, tt.requestPath, nil)
 			request.SetPathValue("id", tt.id)

@@ -1,20 +1,19 @@
 package handlers
 
 import (
-	//"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/VladSnap/shortener/internal/data"
+	"github.com/VladSnap/shortener/internal/services"
 )
 
 type GetHandler struct {
-	shortLinkRepo data.ShortLinkRepo
+	service services.ShorterService
 }
 
-func NewGetHandler(repo data.ShortLinkRepo) *GetHandler {
+func NewGetHandler(service services.ShorterService) *GetHandler {
 	handler := new(GetHandler)
-	handler.shortLinkRepo = repo
+	handler.service = service
 	return handler
 }
 
@@ -24,15 +23,15 @@ func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	id := req.PathValue("id")
+	shortID := req.PathValue("id")
 	pathegmentCount := len(strings.Split(req.URL.Path, "/"))
 
-	if id == "" || pathegmentCount <= 1 || pathegmentCount > 2 {
+	if shortID == "" || pathegmentCount <= 1 || pathegmentCount > 2 {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	url := handler.shortLinkRepo.GetURL(id)
+	url := handler.service.GetURL(shortID)
 
 	if url == "" {
 		http.Error(res, "Bad Request", http.StatusBadRequest)

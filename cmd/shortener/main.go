@@ -9,6 +9,7 @@ import (
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/handlers"
 	"github.com/VladSnap/shortener/internal/log"
+	"github.com/VladSnap/shortener/internal/services"
 	"go.uber.org/zap"
 )
 
@@ -33,8 +34,9 @@ func main() {
 
 func createServer(opts *config.Options) app.ShortenerServer {
 	shortLinkRepo := data.NewShortLinkRepo()
-	getHandler := handlers.NewGetHandler(shortLinkRepo)
-	postHandler := handlers.NewPostHandler(shortLinkRepo, opts.BaseURL)
+	shorterService := services.NewNaiveShorterService(shortLinkRepo)
+	getHandler := handlers.NewGetHandler(shorterService)
+	postHandler := handlers.NewPostHandler(shorterService, opts.BaseURL)
 	server := app.NewChiShortenerServer(opts, postHandler, getHandler)
 	return server
 }
