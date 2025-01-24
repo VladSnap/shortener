@@ -62,12 +62,18 @@ func LogMiddleware(next http.Handler) http.Handler {
 		// после завершения замеряем время выполнения запроса
 		duration := time.Since(start)
 
+		headersLog = ""
+		for k, v := range w.Header() {
+			headersLog += fmt.Sprintf("%s: %v | ", k, v)
+		}
+
 		log.Zap.Infoln(
 			"Response", r.Method, r.RequestURI,
 			"status:", responseData.status, // получаем перехваченный код статуса ответа
 			"duration:", duration.Milliseconds(), "ms",
 			"size:", responseData.size, "bytes", // получаем перехваченный размер ответа
-			"\n", "Data:", "'"+responseData.data+"'",
+			"\nHeaders:", headersLog,
+			"Data:", "'"+responseData.data+"'",
 		)
 	})
 }
