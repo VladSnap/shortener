@@ -11,19 +11,30 @@ var gzipContentTypes *[]string = &[]string{"application/json", "text/html"}
 
 type gzipWriter struct {
 	http.ResponseWriter
-	zw *gzip.Writer
+	zw           *gzip.Writer
+	isCompressed bool
 }
 
 func (w gzipWriter) Write(b []byte) (int, error) {
 	ct := w.Header().Get("Content-Type")
 
 	if ct != "" && slices.Contains(*gzipContentTypes, ct) {
+		w.Header().Set("Content-Encoding", "gzip")
+		w.isCompressed = true
 		// Сжимаем ответ, если у него подходящий тип контента
 		return w.zw.Write(b)
 	}
 
 	// Не сжимаем ответ
-	return w.Write(b)
+	return w.ResponseWriter.Write(b)
+}
+
+func (w gzipWriter) Close() error {
+	if w.isCompressed {
+		return w.zw.Close()
+	}
+
+	return nil
 }
 
 func GzipMiddleware(next http.Handler) http.Handler {
@@ -50,10 +61,9 @@ func GzipMiddleware(next http.Handler) http.Handler {
 
 		if isAcceptGzip {
 			gzWriter := gzip.NewWriter(w)
-			ow = &gzipWriter{w, gzWriter}
-			defer gzWriter.Close()
-
-			w.Header().Set("Content-Encoding", "gzip")
+			gzipWritterWrap := gzipWriter{w, gzWriter, false}
+			ow = &gzipWritterWrap
+			defer gzipWritterWrap.Close()
 		}
 
 		next.ServeHTTP(ow, r)
