@@ -15,12 +15,8 @@ type gzipWriter struct {
 	isCompressed bool
 }
 
-func (w gzipWriter) Write(b []byte) (int, error) {
-	ct := w.Header().Get("Content-Type")
-
-	if ct != "" && slices.Contains(*gzipContentTypes, ct) {
-		w.Header().Set("Content-Encoding", "gzip")
-		w.isCompressed = true
+func (w *gzipWriter) Write(b []byte) (int, error) {
+	if w.isCompressed {
 		// Сжимаем ответ, если у него подходящий тип контента
 		return w.zw.Write(b)
 	}
@@ -29,7 +25,19 @@ func (w gzipWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
-func (w gzipWriter) Close() error {
+func (w *gzipWriter) WriteHeader(statusCode int) {
+	ct := w.Header().Get("Content-Type")
+
+	// Надо проверить какой у нас контент будет в качестве ответа, чтобы принять решение, надо ли сжимать данные
+	if ct != "" && slices.Contains(*gzipContentTypes, ct) && statusCode < 300 {
+		w.Header().Add("Content-Encoding", "gzip")
+		w.isCompressed = true
+	}
+
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (w *gzipWriter) Close() error {
 	if w.isCompressed {
 		return w.zw.Close()
 	}
