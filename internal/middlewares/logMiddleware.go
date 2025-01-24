@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -39,6 +40,11 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 func LogMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Zap.Infof("Request %v %v", r.Method, r.RequestURI)
+		headersLog := ""
+		for k, v := range r.Header {
+			headersLog += fmt.Sprintf("%s: %v | ", k, v)
+		}
+		log.Zap.Infof("Headers: %s", headersLog)
 		// перед началом выполнения функции сохраняем текущее время
 		start := time.Now()
 
