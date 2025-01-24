@@ -12,6 +12,7 @@ type (
 	responseData struct {
 		status int
 		size   int
+		data   string
 	}
 
 	// добавляем реализацию http.ResponseWriter
@@ -25,6 +26,7 @@ func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	// записываем ответ, используя оригинальный http.ResponseWriter
 	size, err := r.ResponseWriter.Write(b)
 	r.responseData.size += size // захватываем размер
+	r.responseData.data += string(b)
 	return size, err
 }
 
@@ -59,6 +61,7 @@ func LogMiddleware(next http.Handler) http.Handler {
 			"status:", responseData.status, // получаем перехваченный код статуса ответа
 			"duration:", duration.Milliseconds(), "ms",
 			"size:", responseData.size, "bytes", // получаем перехваченный размер ответа
+			"\n", "Data:", "'"+responseData.data+"'",
 		)
 	})
 }
