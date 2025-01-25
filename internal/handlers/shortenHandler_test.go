@@ -48,7 +48,7 @@ func TestShortenHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Full URL verify error\n",
 			},
 		}, {
 			name:        "request body is empty",
@@ -70,7 +70,7 @@ func TestShortenHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Http method not POST\n",
 			},
 		}, {
 			name:        "internal server error",
@@ -81,7 +81,7 @@ func TestShortenHandler(t *testing.T) {
 			want: want{
 				code:         500,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Internal Server Error\n",
+				responseBody: "random fail\n",
 			},
 		},
 	}

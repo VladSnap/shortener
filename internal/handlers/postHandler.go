@@ -24,19 +24,19 @@ func NewPostHandler(service services.ShorterService, baseURL string) *PostHandle
 
 func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Http method not POST", http.StatusBadRequest)
 		return
 	}
 
 	if req.URL.Path != "/" {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Incorrect request path", http.StatusBadRequest)
 		return
 	}
 
 	ct := req.Header.Get("content-type")
 
 	if ct != "text/plain" && ct != "text/plain; charset=utf-8" {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Incorrect content-type", http.StatusBadRequest)
 		return
 	}
 
@@ -44,7 +44,7 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	fullURL := string(body)
 
 	if err != nil || fullURL == "" {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Required url", http.StatusBadRequest)
 		return
 	}
 
@@ -53,14 +53,14 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(fullURL)
 
 	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Full URL verify error", http.StatusBadRequest)
 		return
 	}
 
 	shortLink, err := handler.service.CreateShortLink(fullURL)
 
 	if err != nil {
-		http.Error(res, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

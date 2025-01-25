@@ -19,7 +19,7 @@ func NewGetHandler(service services.ShorterService) *GetHandler {
 
 func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Http method not GET", http.StatusBadRequest)
 		return
 	}
 
@@ -27,14 +27,14 @@ func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	pathegmentCount := len(strings.Split(req.URL.Path, "/"))
 
 	if shortID == "" || pathegmentCount <= 1 || pathegmentCount > 2 {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Request path incorrect", http.StatusBadRequest)
 		return
 	}
 
 	url := handler.service.GetURL(shortID)
 
 	if url == "" {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Url not found", http.StatusNotFound)
 		return
 	}
 

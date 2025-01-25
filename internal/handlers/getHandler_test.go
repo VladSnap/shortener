@@ -59,7 +59,7 @@ func TestGetHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Http method not GET\n",
 				location:     "",
 			},
 		},
@@ -72,20 +72,20 @@ func TestGetHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Request path incorrect\n",
 				location:     "",
 			},
 		},
 		{
 			name:        "request path not corrected #2",
-			requestPath: "/foo",
+			requestPath: "/foo/bar",
 			httpMethod:  http.MethodGet,
 			id:          "dVCBBnmd",
 			url:         "",
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Request path incorrect\n",
 				location:     "",
 			},
 		},
@@ -98,7 +98,7 @@ func TestGetHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Request path incorrect\n",
 				location:     "",
 			},
 		},
@@ -109,9 +109,9 @@ func TestGetHandler(t *testing.T) {
 			id:          "bdGTBvoP",
 			url:         "",
 			want: want{
-				code:         400,
+				code:         404,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Url not found\n",
 				location:     "",
 			},
 		},

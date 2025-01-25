@@ -53,7 +53,7 @@ func TestPostHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Full URL verify error\n",
 			},
 		}, {
 			name:        "request body is empty",
@@ -64,7 +64,7 @@ func TestPostHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Required url\n",
 			},
 		}, {
 			name:        "http method not corrected",
@@ -75,7 +75,7 @@ func TestPostHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Http method not POST\n",
 			},
 		}, {
 			name:        "request path not correct #1",
@@ -86,7 +86,7 @@ func TestPostHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Incorrect request path\n",
 			},
 		}, {
 			name:        "request path not correct #2",
@@ -97,7 +97,7 @@ func TestPostHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Incorrect request path\n",
 			},
 		}, {
 			name:        "request path not correct #3",
@@ -108,7 +108,7 @@ func TestPostHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Incorrect request path\n",
 			},
 		}, {
 			name:        "internal server error",
@@ -119,7 +119,7 @@ func TestPostHandler(t *testing.T) {
 			want: want{
 				code:         500,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Internal Server Error\n",
+				responseBody: "random fail\n",
 			},
 		},
 	}

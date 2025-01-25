@@ -32,14 +32,14 @@ func NewShortenHandler(service services.ShorterService, baseURL string) *Shorten
 
 func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Http method not POST", http.StatusBadRequest)
 		return
 	}
 
 	ct := req.Header.Get("content-type")
 
 	if ct != "application/json" && ct != "application/x-gzip" && ct != "application/json; charset=utf-8" {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Incorrect content-type", http.StatusBadRequest)
 		return
 	}
 
@@ -60,14 +60,14 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(request.URL)
 
 	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Full URL verify error", http.StatusBadRequest)
 		return
 	}
 
 	shortLink, err := handler.service.CreateShortLink(request.URL)
 
 	if err != nil {
-		http.Error(res, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
