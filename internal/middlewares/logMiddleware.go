@@ -73,7 +73,7 @@ func LogMiddleware(next http.Handler) http.Handler {
 			"duration:", duration.Milliseconds(), "ms",
 			"size:", responseData.size, "bytes", // получаем перехваченный размер ответа
 			"\nHeaders:", headersLog,
-			"Data:", "'"+responseData.data+"'",
+			"\nData:", "'"+responseData.data+"'",
 		)
 	})
 }
