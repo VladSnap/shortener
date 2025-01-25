@@ -39,7 +39,7 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 	ct := req.Header.Get("content-type")
 
 	if ct != "application/json" && ct != "application/x-gzip" && ct != "application/json; charset=utf-8" {
-		http.Error(res, "Incorrect content-type", http.StatusBadRequest)
+		http.Error(res, "Incorrect content-type:"+ct, http.StatusBadRequest)
 		return
 	}
 
