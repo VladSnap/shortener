@@ -4,6 +4,7 @@ import (
 	//"fmt"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/VladSnap/shortener/internal/services"
 	urlverifier "github.com/davidmytton/url-verifier"
@@ -54,6 +55,8 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 		return
 	}
 
+	request.URL = strings.TrimSuffix(request.URL, "\r")
+	request.URL = strings.TrimSuffix(request.URL, "\n")
 	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(request.URL)
 
 	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
