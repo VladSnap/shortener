@@ -62,7 +62,7 @@ func main() {
 	case "1":
 		request, err = getRequestText(long, isCompress)
 	case "2":
-		request, err = getRequestJson(long, isCompress)
+		request, err = getRequestJSON(long, isCompress)
 	default:
 		panic("Select 1 or 2!")
 	}
@@ -99,7 +99,7 @@ func getRequestText(URL string, isCompress bool) (*http.Request, error) {
 	return request, nil
 }
 
-func getRequestJson(URL string, isCompress bool) (*http.Request, error) {
+func getRequestJSON(URL string, isCompress bool) (*http.Request, error) {
 	rqModel := ShortenRequest{URL: URL}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(rqModel)
