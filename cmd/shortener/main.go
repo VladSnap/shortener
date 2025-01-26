@@ -13,8 +13,18 @@ import (
 	"go.uber.org/zap"
 )
 
+var resourceManager *services.ResourceManager
+
 func main() {
 	defer log.Zap.Sync()
+	resourceManager = services.NewResourceManager()
+	defer func() {
+		err := resourceManager.Cleanup()
+
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	log.Zap.Info("run shorneter server", zap.Strings("Args", os.Args))
 
@@ -44,6 +54,7 @@ func createServer(opts *config.Options) (app.ShortenerServer, error) {
 		if err != nil {
 			return nil, err
 		}
+		resourceManager.Register(fileRepo.Close)
 		shortLinkRepo = fileRepo
 	} else {
 		shortLinkRepo = data.NewShortLinkRepo()
