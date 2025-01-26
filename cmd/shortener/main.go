@@ -24,7 +24,11 @@ func main() {
 		panic(err)
 	}
 
-	server := createServer(opts)
+	server, err := createServer(opts)
+	if err != nil {
+		panic(err)
+	}
+
 	err = server.RunServer()
 
 	if err != nil {
@@ -32,13 +36,24 @@ func main() {
 	}
 }
 
-func createServer(opts *config.Options) app.ShortenerServer {
-	shortLinkRepo := data.NewShortLinkRepo()
+func createServer(opts *config.Options) (app.ShortenerServer, error) {
+	var shortLinkRepo services.ShortLinkRepo
+
+	if opts.FileStoragePath != "" {
+		fileRepo, err := data.NewFileShortLinkRepo(opts.FileStoragePath)
+		if err != nil {
+			return nil, err
+		}
+		shortLinkRepo = fileRepo
+	} else {
+		shortLinkRepo = data.NewShortLinkRepo()
+	}
+
 	shorterService := services.NewNaiveShorterService(shortLinkRepo)
 	postHandler := handlers.NewPostHandler(shorterService, opts.BaseURL)
 	getHandler := handlers.NewGetHandler(shorterService)
 	shortenHandler := handlers.NewShortenHandler(shorterService, opts.BaseURL)
 
 	server := app.NewChiShortenerServer(opts, postHandler, getHandler, shortenHandler)
-	return server
+	return server, nil
 }
