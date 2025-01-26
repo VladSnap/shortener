@@ -1,9 +1,13 @@
 package services
 
 import (
-	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/helpers"
 )
+
+type ShortLinkRepo interface {
+	CreateShortLink(shortID string, fullURL string) error
+	GetURL(shortID string) string
+}
 
 type ShorterService interface {
 	CreateShortLink(fullURL string) (string, error)
@@ -11,10 +15,10 @@ type ShorterService interface {
 }
 
 type NaiveShorterService struct {
-	shortLinkRepo data.ShortLinkRepo
+	shortLinkRepo ShortLinkRepo
 }
 
-func NewNaiveShorterService(repo data.ShortLinkRepo) *NaiveShorterService {
+func NewNaiveShorterService(repo ShortLinkRepo) *NaiveShorterService {
 	service := new(NaiveShorterService)
 	service.shortLinkRepo = repo
 	return service

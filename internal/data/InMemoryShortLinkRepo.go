@@ -1,10 +1,5 @@
 package data
 
-type ShortLinkRepo interface {
-	CreateShortLink(shortID string, fullURL string) error
-	GetURL(shortID string) string
-}
-
 type InMemoryShortLinkRepo struct {
 	links map[string]string
 }
