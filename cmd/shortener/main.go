@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/VladSnap/shortener/internal/app"
@@ -16,13 +17,16 @@ import (
 var resourceManager *services.ResourceManager
 
 func main() {
-	defer log.Zap.Sync()
+	defer func() {
+		err := log.Zap.Sync()
+		panic(fmt.Errorf("failed zap logger sync: %v", err))
+	}()
 	resourceManager = services.NewResourceManager()
 	defer func() {
 		err := resourceManager.Cleanup()
 
 		if err != nil {
-			panic(err)
+			panic(fmt.Errorf("failed resourceManager clean: %v", err))
 		}
 	}()
 
@@ -52,7 +56,7 @@ func createServer(opts *config.Options) (app.ShortenerServer, error) {
 	if opts.FileStoragePath != "" {
 		fileRepo, err := data.NewFileShortLinkRepo(opts.FileStoragePath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed create FileShortLinkRepo: %w", err)
 		}
 		resourceManager.Register(fileRepo.Close)
 		shortLinkRepo = fileRepo

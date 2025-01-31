@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/caarlos0/env/v6"
@@ -42,7 +43,7 @@ func ParseFlags(validater ConfigValidater) (*Options, error) {
 
 	err := validater.Validate(opts)
 
-	return opts, err
+	return opts, fmt.Errorf("config validating failed: %w", err)
 }
 
 func ParseEnvConfig(opts *Options) error {

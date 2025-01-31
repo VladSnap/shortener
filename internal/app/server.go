@@ -1,8 +1,7 @@
 package app
 
 import (
-	//"fmt"
-
+	"fmt"
 	"net/http"
 
 	"github.com/VladSnap/shortener/internal/config"
@@ -30,7 +29,6 @@ func NewChiShortenerServer(opts *config.Options,
 	postHandler Handler,
 	getHandler Handler,
 	shortenHandler Handler) *ChiShortenerServer {
-
 	server := new(ChiShortenerServer)
 	server.opts = opts
 	server.postHandler = postHandler
@@ -41,7 +39,8 @@ func NewChiShortenerServer(opts *config.Options,
 
 func (server *ChiShortenerServer) RunServer() error {
 	var httpListener = server.initServer()
-	return http.ListenAndServe(server.opts.ListenAddress, httpListener)
+	err := http.ListenAndServe(server.opts.ListenAddress, httpListener)
+	return fmt.Errorf("failed server listen: %w", err)
 }
 
 func (server *ChiShortenerServer) initServer() *chi.Mux {

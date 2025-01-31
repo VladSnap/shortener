@@ -105,7 +105,7 @@ func getRequestJSON(url string, isCompress bool) (*http.Request, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(rqModel)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed json encode: %w", err)
 	}
 
 	request, err := getBaseRequest(buf.String(), isCompress, "api/shorten")
@@ -124,7 +124,7 @@ func getBaseRequest(data string, isCompress bool, path string) (*http.Request, e
 		return nil, err
 	}
 
-	request, err := http.NewRequest(http.MethodPost, endpoint+path, *reader)
+	request, err := http.NewRequest(http.MethodPost, endpoint+path, reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed make http reques: %w", err)
 	}
@@ -136,21 +136,24 @@ func getBaseRequest(data string, isCompress bool, path string) (*http.Request, e
 	return request, nil
 }
 
-func getReader(data string, isCompress bool) (*io.Reader, error) {
+func getReader(data string, isCompress bool) (io.Reader, error) {
 	var rqReader io.Reader
 
 	if isCompress {
 		buf := bytes.NewBuffer(nil)
 		zb := gzip.NewWriter(buf)
 		_, err := zb.Write([]byte(data))
-		defer zb.Close()
+		defer func() {
+			closeErr := zb.Close()
+			fmt.Printf("failed gzip write close: %v\n", closeErr)
+		}()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed gzip write: %w", err)
 		}
 		rqReader = buf
 	} else {
 		rqReader = strings.NewReader(data)
 	}
 
-	return &rqReader, nil
+	return rqReader, nil
 }
