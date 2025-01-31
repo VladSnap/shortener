@@ -19,14 +19,14 @@ var resourceManager *services.ResourceManager
 func main() {
 	defer func() {
 		err := log.Zap.Sync()
-		panic(fmt.Errorf("failed zap logger sync: %v", err))
+		panic(fmt.Errorf("failed zap logger sync: %w", err))
 	}()
 	resourceManager = services.NewResourceManager()
 	defer func() {
 		err := resourceManager.Cleanup()
 
 		if err != nil {
-			panic(fmt.Errorf("failed resourceManager clean: %v", err))
+			panic(fmt.Errorf("failed resourceManager clean: %w", err))
 		}
 	}()
 

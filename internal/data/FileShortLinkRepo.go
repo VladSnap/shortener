@@ -1,11 +1,12 @@
 package data
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"os"
 
-	"bufio"
-
+	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/google/uuid"
 )
@@ -16,21 +17,21 @@ type FileShortLinkRepo struct {
 }
 
 type ShortLinkData struct {
-	UUID        string
-	ShortURL    string
-	OriginalURL string
+	UUID        string `json:"uuid"`
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"orig_url"`
 }
 
 func NewFileShortLinkRepo(fileStoragePath string) (*FileShortLinkRepo, error) {
 	repo := new(FileShortLinkRepo)
-	file, err := os.OpenFile(fileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	file, err := os.OpenFile(fileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, constants.FileRWPerm)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed open file storage: %w", err)
 	}
 	repo.storageFile = file
 	links, err := repo.loadFromFile()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed load from file storage: %w", err)
 	}
 
 	repo.links = make(map[string]ShortLinkData, len(links))
@@ -42,12 +43,12 @@ func NewFileShortLinkRepo(fileStoragePath string) (*FileShortLinkRepo, error) {
 }
 
 func (repo *FileShortLinkRepo) CreateShortLink(shortID string, fullURL string) error {
-	uuid, err := uuid.NewRandom()
+	id, err := uuid.NewRandom()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed create random: %w", err)
 	}
 
-	data := ShortLinkData{UUID: uuid.String(), ShortURL: shortID, OriginalURL: fullURL}
+	data := ShortLinkData{UUID: id.String(), ShortURL: shortID, OriginalURL: fullURL}
 	repo.links[shortID] = data
 	return repo.writeLink(data)
 }
@@ -62,11 +63,11 @@ func (repo *FileShortLinkRepo) GetURL(shortID string) string {
 func (repo *FileShortLinkRepo) Close() error {
 	err := repo.storageFile.Close()
 	if err != nil {
-		log.Zap.Error("File storage close error", err.Error())
+		return fmt.Errorf("file storage close error: %w", err)
 	}
 	log.Zap.Info("File storage closed")
 
-	return err
+	return nil
 }
 
 func (repo *FileShortLinkRepo) loadFromFile() ([]ShortLinkData, error) {
@@ -78,14 +79,14 @@ func (repo *FileShortLinkRepo) loadFromFile() ([]ShortLinkData, error) {
 		data := ShortLinkData{}
 		err := json.Unmarshal(dataBytes, &data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed deserialize ShortLinkData: %w", err)
 		}
 
 		dataList = append(dataList, data)
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed file scan: %w", err)
 	}
 
 	return dataList, nil
@@ -94,7 +95,7 @@ func (repo *FileShortLinkRepo) loadFromFile() ([]ShortLinkData, error) {
 func (repo *FileShortLinkRepo) writeLink(link ShortLinkData) error {
 	data, err := json.Marshal(link)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed serialize ShortLinkData: %w", err)
 	}
 
 	data = append(data, '\n')

@@ -50,7 +50,7 @@ func ParseEnvConfig(opts *Options) error {
 	err := env.Parse(opts)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("failed env parsing: %w", err)
 	}
 
 	return nil
