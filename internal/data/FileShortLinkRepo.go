@@ -100,5 +100,5 @@ func (repo *FileShortLinkRepo) writeLink(link ShortLinkData) error {
 
 	data = append(data, '\n')
 	_, err = repo.storageFile.Write(data)
-	return err
+	return fmt.Errorf("failed write to file storage: %w", err)
 }

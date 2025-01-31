@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	//"fmt"
 	"encoding/json"
 	"net/http"
 	"strings"
 
+	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/services"
 	urlverifier "github.com/davidmytton/url-verifier"
 )
@@ -75,5 +75,10 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 
 	res.Header().Add("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
-	json.NewEncoder(res).Encode(result)
+	err = json.NewEncoder(res).Encode(result)
+
+	if err != nil {
+		log.Zap.Errorf("failed write to response: %w", err)
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+	}
 }

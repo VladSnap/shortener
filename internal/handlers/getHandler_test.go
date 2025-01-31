@@ -124,15 +124,17 @@ func TestGetHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService.On("GetURL", tt.id).Return(tt.url)
 
-			request := httptest.NewRequest(tt.httpMethod, tt.requestPath, nil)
+			request := httptest.NewRequest(tt.httpMethod, tt.requestPath, http.NoBody)
 			request.SetPathValue("id", tt.id)
 			w := httptest.NewRecorder()
 			getHandler.Handle(w, request)
 
 			res := w.Result()
 			assert.Equal(t, tt.want.code, res.StatusCode)
-			defer res.Body.Close()
-			resBody, _ := io.ReadAll(res.Body)
+			resBody, err := io.ReadAll(res.Body)
+			assert.NoError(t, err, "no error for read response")
+			err = res.Body.Close()
+			assert.NoError(t, err, "no error for close response body")
 
 			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
 			assert.Equal(t, tt.url, res.Header.Get("Location"))

@@ -139,8 +139,10 @@ func TestPostHandler(t *testing.T) {
 			postHandler.Handle(w, postRequest)
 			res := w.Result()
 			require.Equal(t, tt.want.code, res.StatusCode, "Incorrect status code")
-			resBody, _ := io.ReadAll(res.Body)
-			defer res.Body.Close()
+			resBody, err := io.ReadAll(res.Body)
+			assert.NoError(t, err, "no error for read response")
+			err = res.Body.Close()
+			assert.NoError(t, err, "no error for close response body")
 
 			shortURL := string(resBody)
 			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"), "Incorrect header content-type")

@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	//"fmt"
 	"io"
 	"net/http"
 	"strings"
 
+	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/services"
 	urlverifier "github.com/davidmytton/url-verifier"
 )
@@ -66,5 +66,10 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Add("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
-	res.Write([]byte(handler.baseURL + "/" + shortLink))
+	_, err = res.Write([]byte(handler.baseURL + "/" + shortLink))
+
+	if err != nil {
+		log.Zap.Errorf("failed write to response: %w", err)
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+	}
 }

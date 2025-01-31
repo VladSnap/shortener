@@ -2,6 +2,7 @@ package helpers
 
 import (
 	crypto "crypto/rand"
+	"fmt"
 	"math/big"
 )
 
@@ -13,7 +14,7 @@ func RandStringRunes(n int) (string, error) {
 	for i := range b {
 		rndIndex, err := crypto.Int(crypto.Reader, maxLetters)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed create new letter: %w", err)
 		}
 		b[i] = letters[rndIndex.Int64()]
 	}
