@@ -19,7 +19,6 @@ type ShortenRequest struct {
 }
 
 func main() {
-
 	// приглашение в консоли
 	fmt.Println("Введите длинный URL")
 	// открываем потоковое чтение из консоли
@@ -33,21 +32,20 @@ func main() {
 	// заполняем контейнер данными
 	// добавляем HTTP-клиент
 	client := &http.Client{}
-	// пишем запрос
 	// запрос методом POST должен, помимо заголовков, содержать тело
-	// тело должно быть источником потокового чтения io.Reader
+	// которое должно быть источником потокового чтения io.Reader
 	var request *http.Request
 
 	fmt.Println("Сжать запрос (принять ответ) gzip? y/n")
 	// читаем строку из консоли
-	gzip, err := reader.ReadString('\n')
+	gzipInpt, err := reader.ReadString('\n')
 	if err != nil {
 		panic(err)
 	}
 
-	gzip = strings.TrimSuffix(gzip, "\r\n")
+	gzipInpt = strings.TrimSuffix(gzipInpt, "\r\n")
 
-	isCompress := gzip == "y"
+	isCompress := gzipInpt == "y"
 
 	fmt.Println("Какой запрос отправить? 1-text/plain, 2-json")
 	// читаем строку из консоли
@@ -78,7 +76,10 @@ func main() {
 	}
 	// выводим код ответа
 	fmt.Println("Статус-код ", response.Status)
-	defer response.Body.Close()
+	defer func() {
+		closeErr := response.Body.Close()
+		fmt.Printf("Response close error: %v\n", closeErr)
+	}()
 	// читаем поток из тела ответа
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
@@ -88,8 +89,8 @@ func main() {
 	fmt.Println(string(body))
 }
 
-func getRequestText(URL string, isCompress bool) (*http.Request, error) {
-	request, err := getBaseRequest(URL, isCompress, "")
+func getRequestText(url string, isCompress bool) (*http.Request, error) {
+	request, err := getBaseRequest(url, isCompress, "")
 	if err != nil {
 		return nil, err
 	}
@@ -99,10 +100,13 @@ func getRequestText(URL string, isCompress bool) (*http.Request, error) {
 	return request, nil
 }
 
-func getRequestJSON(URL string, isCompress bool) (*http.Request, error) {
-	rqModel := ShortenRequest{URL: URL}
+func getRequestJSON(url string, isCompress bool) (*http.Request, error) {
+	rqModel := ShortenRequest{URL: url}
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(rqModel)
+	err := json.NewEncoder(&buf).Encode(rqModel)
+	if err != nil {
+		return nil, err
+	}
 
 	request, err := getBaseRequest(buf.String(), isCompress, "api/shorten")
 	if err != nil {
@@ -122,11 +126,11 @@ func getBaseRequest(data string, isCompress bool, path string) (*http.Request, e
 
 	request, err := http.NewRequest(http.MethodPost, endpoint+path, *reader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed make http reques: %w", err)
 	}
 	if isCompress {
 		request.Header.Add("Content-Encoding", "gzip")
-		//request.Header.Add("Accept-Encoding", "gzip")
+		// request.Header.Add("Accept-Encoding", "gzip")
 	}
 
 	return request, nil
