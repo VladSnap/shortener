@@ -9,32 +9,32 @@ import (
 )
 
 type (
-	// берём структуру для хранения сведений об ответе
+	// Берём структуру для хранения сведений об ответе.
 	responseData struct {
+		data   string
 		status int
 		size   int
-		data   string
 	}
 
-	// добавляем реализацию http.ResponseWriter
+	// Добавляем реализацию http.ResponseWriter.
 	loggingResponseWriter struct {
-		http.ResponseWriter // встраиваем оригинальный http.ResponseWriter
+		http.ResponseWriter // Встраиваем оригинальный http.ResponseWriter.
 		responseData        *responseData
 	}
 )
 
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
-	// записываем ответ, используя оригинальный http.ResponseWriter
+	// Записываем ответ, используя оригинальный http.ResponseWriter.
 	size, err := r.ResponseWriter.Write(b)
-	r.responseData.size += size // захватываем размер
+	r.responseData.size += size // Захватываем размер.
 	r.responseData.data += string(b)
-	return size, err
+	return size, fmt.Errorf("failed logging response write: %w", err)
 }
 
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
-	// записываем код статуса, используя оригинальный http.ResponseWriter
+	// Записываем код статуса, используя оригинальный http.ResponseWriter.
 	r.ResponseWriter.WriteHeader(statusCode)
-	r.responseData.status = statusCode // захватываем код статуса
+	r.responseData.status = statusCode // Захватываем код статуса.
 }
 
 func LogMiddleware(next http.Handler) http.Handler {
@@ -45,7 +45,7 @@ func LogMiddleware(next http.Handler) http.Handler {
 			headersLog += fmt.Sprintf("%s: %v | ", k, v)
 		}
 		log.Zap.Infof("Headers: %s", headersLog)
-		// перед началом выполнения функции сохраняем текущее время
+		// Перед началом выполнения функции сохраняем текущее время.
 		start := time.Now()
 
 		responseData := &responseData{
@@ -53,13 +53,13 @@ func LogMiddleware(next http.Handler) http.Handler {
 			size:   0,
 		}
 		lw := loggingResponseWriter{
-			ResponseWriter: w, // встраиваем оригинальный http.ResponseWriter
+			ResponseWriter: w, // Встраиваем оригинальный http.ResponseWriter.
 			responseData:   responseData,
 		}
 
-		// вызываем следующий обработчик
+		// Вызываем следующий обработчик.
 		next.ServeHTTP(&lw, r)
-		// после завершения замеряем время выполнения запроса
+		// После завершения замеряем время выполнения запроса.
 		duration := time.Since(start)
 
 		headersLog = ""
@@ -69,9 +69,9 @@ func LogMiddleware(next http.Handler) http.Handler {
 
 		log.Zap.Infoln(
 			"Response", r.Method, r.RequestURI,
-			"status:", responseData.status, // получаем перехваченный код статуса ответа
+			"status:", responseData.status, // Получаем перехваченный код статуса ответа.
 			"duration:", duration.Milliseconds(), "ms",
-			"size:", responseData.size, "bytes", // получаем перехваченный размер ответа
+			"size:", responseData.size, "bytes", // Получаем перехваченный размер ответа.
 			"\nHeaders:", headersLog,
 			"\nData:", "'"+responseData.data+"'",
 		)

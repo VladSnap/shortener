@@ -71,5 +71,6 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Zap.Errorf("failed write to response: %w", err)
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }

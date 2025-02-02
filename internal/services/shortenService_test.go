@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -76,7 +77,7 @@ func TestNaiveShortenService_GetURL(t *testing.T) {
 
 func (repo *MockShortLinkRepo) CreateShortLink(shortID string, fullURL string) error {
 	args := repo.Called(shortID, fullURL)
-	return args.Error(0)
+	return fmt.Errorf("failed mock call CreateShortLink: %w", args.Error(0))
 }
 
 func (repo *MockShortLinkRepo) GetURL(key string) string {

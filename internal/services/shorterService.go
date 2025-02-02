@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/VladSnap/shortener/internal/helpers"
 )
 
@@ -29,12 +31,12 @@ const shortIDLength = 8
 func (service *NaiveShorterService) CreateShortLink(fullURL string) (string, error) {
 	shortID, err := helpers.RandStringRunes(shortIDLength)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed create short url: %w", err)
 	}
 
 	err = service.shortLinkRepo.CreateShortLink(shortID, fullURL)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed create short link object: %w", err)
 	}
 
 	return shortID, nil

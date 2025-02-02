@@ -2,9 +2,12 @@ package middlewares
 
 import (
 	"compress/gzip"
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
+
+	"github.com/VladSnap/shortener/internal/log"
 )
 
 var gzipContentTypes *[]string = &[]string{"application/json", "text/html"}
@@ -18,11 +21,13 @@ type gzipWriter struct {
 func (w *gzipWriter) Write(b []byte) (int, error) {
 	if w.isCompressed {
 		// Сжимаем ответ, если у него подходящий тип контента
-		return w.zw.Write(b)
+		bytes, err := w.zw.Write(b)
+		return bytes, fmt.Errorf("failed gzip write: %w", err)
 	}
 
 	// Не сжимаем ответ
-	return w.ResponseWriter.Write(b)
+	bytes, err := w.ResponseWriter.Write(b)
+	return bytes, fmt.Errorf("failed http write: %w", err)
 }
 
 func (w *gzipWriter) WriteHeader(statusCode int) {
@@ -39,7 +44,8 @@ func (w *gzipWriter) WriteHeader(statusCode int) {
 
 func (w *gzipWriter) Close() error {
 	if w.isCompressed {
-		return w.zw.Close()
+		err := w.zw.Close()
+		return fmt.Errorf("failed gzip close: %w", err)
 	}
 
 	return nil
@@ -61,7 +67,10 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			}
 
 			r.Body = gzReader
-			defer gzReader.Close()
+			defer func() {
+				err := gzReader.Close()
+				log.Zap.Error("failed gzip reader close: %w", err)
+			}()
 		}
 
 		headerAE := r.Header.Get("Accept-Encoding")
@@ -71,7 +80,11 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			gzWriter := gzip.NewWriter(w)
 			gzipWritterWrap := gzipWriter{w, gzWriter, false}
 			ow = &gzipWritterWrap
-			defer gzipWritterWrap.Close()
+
+			defer func() {
+				err := gzipWritterWrap.Close()
+				log.Zap.Error("failed gzip writer close: %w", err)
+			}()
 		}
 
 		next.ServeHTTP(ow, r)
