@@ -25,7 +25,7 @@ func (w *gzipWriter) Write(b []byte) (int, error) {
 		if err != nil {
 			return bytes, fmt.Errorf("failed gzip write: %w", err)
 		}
-		return bytes, err
+		return bytes, nil
 	}
 
 	// Не сжимаем ответ
