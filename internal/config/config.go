@@ -43,7 +43,11 @@ func ParseFlags(validater ConfigValidater) (*Options, error) {
 
 	err := validater.Validate(opts)
 
-	return opts, fmt.Errorf("config validating failed: %w", err)
+	if err != nil {
+		return nil, fmt.Errorf("config validating failed: %w", err)
+	}
+
+	return opts, nil
 }
 
 func ParseEnvConfig(opts *Options) error {

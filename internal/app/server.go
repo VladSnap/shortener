@@ -40,7 +40,10 @@ func NewChiShortenerServer(opts *config.Options,
 func (server *ChiShortenerServer) RunServer() error {
 	var httpListener = server.initServer()
 	err := http.ListenAndServe(server.opts.ListenAddress, httpListener)
-	return fmt.Errorf("failed server listen: %w", err)
+	if err != nil {
+		return fmt.Errorf("failed server listen: %w", err)
+	}
+	return nil
 }
 
 func (server *ChiShortenerServer) initServer() *chi.Mux {

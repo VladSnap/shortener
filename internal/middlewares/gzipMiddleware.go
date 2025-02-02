@@ -22,12 +22,18 @@ func (w *gzipWriter) Write(b []byte) (int, error) {
 	if w.isCompressed {
 		// Сжимаем ответ, если у него подходящий тип контента
 		bytes, err := w.zw.Write(b)
-		return bytes, fmt.Errorf("failed gzip write: %w", err)
+		if err != nil {
+			return bytes, fmt.Errorf("failed gzip write: %w", err)
+		}
+		return bytes, err
 	}
 
 	// Не сжимаем ответ
 	bytes, err := w.ResponseWriter.Write(b)
-	return bytes, fmt.Errorf("failed http write: %w", err)
+	if err != nil {
+		return bytes, fmt.Errorf("failed http write: %w", err)
+	}
+	return bytes, nil
 }
 
 func (w *gzipWriter) WriteHeader(statusCode int) {
@@ -45,7 +51,9 @@ func (w *gzipWriter) WriteHeader(statusCode int) {
 func (w *gzipWriter) Close() error {
 	if w.isCompressed {
 		err := w.zw.Close()
-		return fmt.Errorf("failed gzip close: %w", err)
+		if err != nil {
+			return fmt.Errorf("failed gzip close: %w", err)
+		}
 	}
 
 	return nil
@@ -69,7 +77,9 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			r.Body = gzReader
 			defer func() {
 				err := gzReader.Close()
-				log.Zap.Error("failed gzip reader close: %w", err)
+				if err != nil {
+					log.Zap.Error("failed gzip reader close: %w", err)
+				}
 			}()
 		}
 
@@ -83,7 +93,9 @@ func GzipMiddleware(next http.Handler) http.Handler {
 
 			defer func() {
 				err := gzipWritterWrap.Close()
-				log.Zap.Error("failed gzip writer close: %w", err)
+				if err != nil {
+					log.Zap.Error("failed gzip writer close: %w", err)
+				}
 			}()
 		}
 

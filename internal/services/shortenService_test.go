@@ -77,7 +77,12 @@ func TestNaiveShortenService_GetURL(t *testing.T) {
 
 func (repo *MockShortLinkRepo) CreateShortLink(shortID string, fullURL string) error {
 	args := repo.Called(shortID, fullURL)
-	return fmt.Errorf("failed mock call CreateShortLink: %w", args.Error(0))
+	err := args.Error(0)
+
+	if err != nil {
+		return fmt.Errorf("failed mock call CreateShortLink: %w", err)
+	}
+	return nil
 }
 
 func (repo *MockShortLinkRepo) GetURL(key string) string {
