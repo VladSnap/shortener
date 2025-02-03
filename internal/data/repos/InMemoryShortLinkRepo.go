@@ -1,4 +1,4 @@
-package data
+package repos
 
 type InMemoryShortLinkRepo struct {
 	links map[string]string

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/VladSnap/shortener/internal/config"
-	"github.com/VladSnap/shortener/internal/data"
+	"github.com/VladSnap/shortener/internal/data/repos"
 	"github.com/VladSnap/shortener/internal/handlers"
 	"github.com/VladSnap/shortener/internal/services"
 )
@@ -13,14 +13,14 @@ func CreateServer(opts *config.Options, resMng *services.ResourceManager) (Short
 	var shortLinkRepo services.ShortLinkRepo
 
 	if opts.FileStoragePath != "" {
-		fileRepo, err := data.NewFileShortLinkRepo(opts.FileStoragePath)
+		fileRepo, err := repos.NewFileShortLinkRepo(opts.FileStoragePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed create FileShortLinkRepo: %w", err)
 		}
 		resMng.Register(fileRepo.Close)
 		shortLinkRepo = fileRepo
 	} else {
-		shortLinkRepo = data.NewShortLinkRepo()
+		shortLinkRepo = repos.NewShortLinkRepo()
 	}
 
 	shorterService := services.NewNaiveShorterService(shortLinkRepo)
