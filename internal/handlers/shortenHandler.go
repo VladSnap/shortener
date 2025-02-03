@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/VladSnap/shortener/internal/log"
-	"github.com/VladSnap/shortener/internal/services"
 	urlverifier "github.com/davidmytton/url-verifier"
 )
 
@@ -19,11 +18,11 @@ type ShortenResponse struct {
 }
 
 type ShortenHandler struct {
-	service services.ShorterService
+	service ShorterService
 	baseURL string
 }
 
-func NewShortenHandler(service services.ShorterService, baseURL string) *ShortenHandler {
+func NewShortenHandler(service ShorterService, baseURL string) *ShortenHandler {
 	handler := new(ShortenHandler)
 	handler.service = service
 	handler.baseURL = baseURL

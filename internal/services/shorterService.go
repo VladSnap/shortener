@@ -11,11 +11,6 @@ type ShortLinkRepo interface {
 	GetURL(shortID string) string
 }
 
-type ShorterService interface {
-	CreateShortLink(fullURL string) (string, error)
-	GetURL(shortID string) string
-}
-
 type NaiveShorterService struct {
 	shortLinkRepo ShortLinkRepo
 }

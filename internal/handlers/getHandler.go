@@ -3,15 +3,13 @@ package handlers
 import (
 	"net/http"
 	"strings"
-
-	"github.com/VladSnap/shortener/internal/services"
 )
 
 type GetHandler struct {
-	service services.ShorterService
+	service ShorterService
 }
 
-func NewGetHandler(service services.ShorterService) *GetHandler {
+func NewGetHandler(service ShorterService) *GetHandler {
 	handler := new(GetHandler)
 	handler.service = service
 	return handler

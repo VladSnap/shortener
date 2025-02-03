@@ -6,16 +6,15 @@ import (
 	"strings"
 
 	"github.com/VladSnap/shortener/internal/log"
-	"github.com/VladSnap/shortener/internal/services"
 	urlverifier "github.com/davidmytton/url-verifier"
 )
 
 type PostHandler struct {
-	service services.ShorterService
+	service ShorterService
 	baseURL string
 }
 
-func NewPostHandler(service services.ShorterService, baseURL string) *PostHandler {
+func NewPostHandler(service ShorterService, baseURL string) *PostHandler {
 	handler := new(PostHandler)
 	handler.service = service
 	handler.baseURL = baseURL
