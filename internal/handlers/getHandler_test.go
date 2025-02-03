@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,7 +59,7 @@ func TestGetHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Http method not GET\n",
 				location:     "",
 			},
 		},
@@ -71,20 +72,20 @@ func TestGetHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Request path incorrect\n",
 				location:     "",
 			},
 		},
 		{
 			name:        "request path not corrected #2",
-			requestPath: "/foo",
+			requestPath: "/foo/bar",
 			httpMethod:  http.MethodGet,
 			id:          "dVCBBnmd",
 			url:         "",
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Request path incorrect\n",
 				location:     "",
 			},
 		},
@@ -97,7 +98,7 @@ func TestGetHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Request path incorrect\n",
 				location:     "",
 			},
 		},
@@ -108,30 +109,32 @@ func TestGetHandler(t *testing.T) {
 			id:          "bdGTBvoP",
 			url:         "",
 			want: want{
-				code:         400,
+				code:         404,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Bad Request\n",
+				responseBody: "Url not found\n",
 				location:     "",
 			},
 		},
 	}
 
-	shortLinkRepo := new(MockShortLinkRepo)
-	getHandler := NewGetHandler(shortLinkRepo)
+	mockService := new(MockShorterService)
+	getHandler := NewGetHandler(mockService)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			shortLinkRepo.On("GetURL", tt.id).Return(tt.url)
+			mockService.On("GetURL", tt.id).Return(tt.url)
 
-			request := httptest.NewRequest(tt.httpMethod, tt.requestPath, nil)
+			request := httptest.NewRequest(tt.httpMethod, tt.requestPath, http.NoBody)
 			request.SetPathValue("id", tt.id)
 			w := httptest.NewRecorder()
 			getHandler.Handle(w, request)
 
 			res := w.Result()
 			assert.Equal(t, tt.want.code, res.StatusCode)
-			defer res.Body.Close()
-			resBody, _ := io.ReadAll(res.Body)
+			resBody, err := io.ReadAll(res.Body)
+			assert.NoError(t, err, "no error for read response")
+			err = res.Body.Close()
+			assert.NoError(t, err, "no error for close response body")
 
 			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
 			assert.Equal(t, tt.url, res.Header.Get("Location"))

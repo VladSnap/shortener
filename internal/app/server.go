@@ -1,8 +1,7 @@
 package app
 
 import (
-	//"fmt"
-
+	"fmt"
 	"net/http"
 
 	"github.com/VladSnap/shortener/internal/config"
@@ -20,35 +19,42 @@ type ShortenerServer interface {
 }
 
 type ChiShortenerServer struct {
-	opts        *config.Options
-	postHandler Handler
-	getHandler  Handler
+	opts           *config.Options
+	postHandler    Handler
+	getHandler     Handler
+	shortenHandler Handler
 }
 
 func NewChiShortenerServer(opts *config.Options,
 	postHandler Handler,
-	getHandler Handler) *ChiShortenerServer {
-
+	getHandler Handler,
+	shortenHandler Handler) *ChiShortenerServer {
 	server := new(ChiShortenerServer)
 	server.opts = opts
 	server.postHandler = postHandler
 	server.getHandler = getHandler
+	server.shortenHandler = shortenHandler
 	return server
 }
 
 func (server *ChiShortenerServer) RunServer() error {
 	var httpListener = server.initServer()
-	return http.ListenAndServe(server.opts.ListenAddress, httpListener)
+	err := http.ListenAndServe(server.opts.ListenAddress, httpListener)
+	if err != nil {
+		return fmt.Errorf("failed server listen: %w", err)
+	}
+	return nil
 }
 
 func (server *ChiShortenerServer) initServer() *chi.Mux {
 	r := chi.NewRouter()
-	r.Use(middlewares.TimerTrace)
-	r.Use(middleware.Logger)
+	r.Use(middlewares.LogMiddleware)
+	r.Use(middlewares.GzipMiddleware)
 	r.Use(middleware.Recoverer)
 
 	r.Post("/", server.postHandler.Handle)
 	r.Get("/{id}", server.getHandler.Handle)
+	r.Post("/api/shorten", server.shortenHandler.Handle)
 
 	return r
 }

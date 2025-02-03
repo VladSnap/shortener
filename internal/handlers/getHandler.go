@@ -1,44 +1,43 @@
 package handlers
 
 import (
-	//"fmt"
 	"net/http"
 	"strings"
-
-	"github.com/VladSnap/shortener/internal/data"
 )
 
 type GetHandler struct {
-	shortLinkRepo data.ShortLinkRepo
+	service ShorterService
 }
 
-func NewGetHandler(repo data.ShortLinkRepo) *GetHandler {
+func NewGetHandler(service ShorterService) *GetHandler {
 	handler := new(GetHandler)
-	handler.shortLinkRepo = repo
+	handler.service = service
 	return handler
 }
 
 func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Http method not GET", http.StatusBadRequest)
 		return
 	}
 
-	id := req.PathValue("id")
-	pathegmentCount := len(strings.Split(req.URL.Path, "/"))
-
-	if id == "" || pathegmentCount <= 1 || pathegmentCount > 2 {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+	shortID := req.PathValue("id")
+	if !validatePath(req.URL.Path) || shortID == "" {
+		http.Error(res, "Request path incorrect", http.StatusBadRequest)
 		return
 	}
 
-	url := handler.shortLinkRepo.GetURL(id)
-
+	url := handler.service.GetURL(shortID)
 	if url == "" {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+		http.Error(res, "Url not found", http.StatusNotFound)
 		return
 	}
 
 	res.Header().Set("Location", url)
 	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
+}
+
+func validatePath(path string) bool {
+	segments := strings.Split(path, "/")
+	return len(segments) == 2 && segments[1] != ""
 }
