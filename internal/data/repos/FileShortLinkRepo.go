@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/data/models"
@@ -101,7 +102,7 @@ func (repo *FileShortLinkRepo) writeLink(link models.ShortLinkData) error {
 }
 
 func createFileStorage(fileStoragePath string) (*os.File, error) {
-	ok, err := helpers.DirectoryExists(fileStoragePath)
+	ok, err := helpers.DirectoryExists(filepath.Dir(fileStoragePath))
 	if !ok && err == nil {
 		return nil, errors.New("fileStoragePath directory not exists")
 	} else if err != nil {
