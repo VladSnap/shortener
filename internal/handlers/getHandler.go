@@ -22,15 +22,12 @@ func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	}
 
 	shortID := req.PathValue("id")
-	pathegmentCount := len(strings.Split(req.URL.Path, "/"))
-
-	if shortID == "" || pathegmentCount <= 1 || pathegmentCount > 2 {
+	if !validatePath(req.URL.Path) || shortID == "" {
 		http.Error(res, "Request path incorrect", http.StatusBadRequest)
 		return
 	}
 
 	url := handler.service.GetURL(shortID)
-
 	if url == "" {
 		http.Error(res, "Url not found", http.StatusNotFound)
 		return
@@ -38,4 +35,9 @@ func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Location", url)
 	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
+}
+
+func validatePath(path string) bool {
+	segments := strings.Split(path, "/")
+	return len(segments) == 2 && segments[1] != ""
 }
