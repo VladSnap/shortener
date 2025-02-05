@@ -23,17 +23,20 @@ type ChiShortenerServer struct {
 	postHandler    Handler
 	getHandler     Handler
 	shortenHandler Handler
+	pingHandler    Handler
 }
 
 func NewChiShortenerServer(opts *config.Options,
 	postHandler Handler,
 	getHandler Handler,
-	shortenHandler Handler) *ChiShortenerServer {
+	shortenHandler Handler,
+	pingHandler Handler) *ChiShortenerServer {
 	server := new(ChiShortenerServer)
 	server.opts = opts
 	server.postHandler = postHandler
 	server.getHandler = getHandler
 	server.shortenHandler = shortenHandler
+	server.pingHandler = pingHandler
 	return server
 }
 
@@ -55,6 +58,7 @@ func (server *ChiShortenerServer) initServer() *chi.Mux {
 	r.Post("/", server.postHandler.Handle)
 	r.Get("/{id}", server.getHandler.Handle)
 	r.Post("/api/shorten", server.shortenHandler.Handle)
+	r.Get("/ping", server.pingHandler.Handle)
 
 	return r
 }

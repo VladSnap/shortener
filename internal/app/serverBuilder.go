@@ -27,7 +27,8 @@ func CreateServer(opts *config.Options, resMng *services.ResourceManager) (Short
 	postHandler := handlers.NewPostHandler(shorterService, opts.BaseURL)
 	getHandler := handlers.NewGetHandler(shorterService)
 	shortenHandler := handlers.NewShortenHandler(shorterService, opts.BaseURL)
+	pingHandler := handlers.NewGetPingHandler(opts)
 
-	server := NewChiShortenerServer(opts, postHandler, getHandler, shortenHandler)
+	server := NewChiShortenerServer(opts, postHandler, getHandler, shortenHandler, pingHandler)
 	return server, nil
 }
