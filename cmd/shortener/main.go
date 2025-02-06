@@ -19,6 +19,7 @@ func main() {
 		err := log.Zap.Sync()
 		panic(fmt.Errorf("failed zap logger sync: %w", err))
 	}()
+	logWorkDir()
 	resourceManager = services.NewResourceManager()
 	defer func() {
 		err := resourceManager.Cleanup()
@@ -46,4 +47,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func logWorkDir() {
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Zap.Errorf("failed get workdir: %v\n", err)
+		return
+	}
+
+	log.Zap.Infof("workdir: %s\n", dir)
 }
