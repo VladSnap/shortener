@@ -13,8 +13,8 @@ import (
 )
 
 type DatabaseShortener struct {
-	Dsn string
 	*sql.DB
+	Dsn string
 }
 
 func NewDatabaseShortener(dsn string) (*DatabaseShortener, error) {
@@ -23,7 +23,7 @@ func NewDatabaseShortener(dsn string) (*DatabaseShortener, error) {
 		return nil, fmt.Errorf("failed open database: %w", err)
 	}
 
-	ds := &DatabaseShortener{dsn, db}
+	ds := &DatabaseShortener{db, dsn}
 	return ds, nil
 }
 
