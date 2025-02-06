@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/VladSnap/shortener/internal/config"
+	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/data/repos"
 	"github.com/VladSnap/shortener/internal/handlers"
 	"github.com/VladSnap/shortener/internal/services"
@@ -12,14 +13,27 @@ import (
 func CreateServer(opts *config.Options, resMng *services.ResourceManager) (ShortenerServer, error) {
 	var shortLinkRepo services.ShortLinkRepo
 
-	if opts.FileStoragePath != "" {
+	switch {
+	case opts.DataBaseConnString != "":
+		database, err := data.NewDatabaseShortener(opts.DataBaseConnString)
+		if err != nil {
+			return nil, fmt.Errorf("failed create DatabaseShortener: %w", err)
+		}
+		resMng.Register(database.Close)
+		err = database.InitDatabase()
+		if err != nil {
+			return nil, fmt.Errorf("failed init Database: %w", err)
+		}
+		// Временно.
+		shortLinkRepo = repos.NewShortLinkRepo()
+	case opts.FileStoragePath != "":
 		fileRepo, err := repos.NewFileShortLinkRepo(opts.FileStoragePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed create FileShortLinkRepo: %w", err)
 		}
 		resMng.Register(fileRepo.Close)
 		shortLinkRepo = fileRepo
-	} else {
+	default:
 		shortLinkRepo = repos.NewShortLinkRepo()
 	}
 
