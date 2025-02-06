@@ -24,8 +24,7 @@ func CreateServer(opts *config.Options, resMng *services.ResourceManager) (Short
 		if err != nil {
 			return nil, fmt.Errorf("failed init Database: %w", err)
 		}
-		// Временно.
-		shortLinkRepo = repos.NewShortLinkRepo()
+		shortLinkRepo = repos.NewDatabaseShortLinkRepo(database)
 	case opts.FileStoragePath != "":
 		fileRepo, err := repos.NewFileShortLinkRepo(opts.FileStoragePath)
 		if err != nil {
