@@ -13,8 +13,8 @@ import (
 )
 
 type DatabaseShortener struct {
-	DB  *sql.DB
 	Dsn string
+	*sql.DB
 }
 
 func NewDatabaseShortener(dsn string) (*DatabaseShortener, error) {
@@ -23,7 +23,7 @@ func NewDatabaseShortener(dsn string) (*DatabaseShortener, error) {
 		return nil, fmt.Errorf("failed open database: %w", err)
 	}
 
-	ds := &DatabaseShortener{DB: db, Dsn: dsn}
+	ds := &DatabaseShortener{dsn, db}
 	return ds, nil
 }
 
@@ -50,10 +50,15 @@ func (ds *DatabaseShortener) InitDatabase() error {
 		return fmt.Errorf("failed to initialize migrations: %w", err)
 	}
 
-	if err := m.Up(); err != nil && errors.Is(err, migrate.ErrNoChange) {
+	err = m.Up()
+	noApply := errors.Is(err, migrate.ErrNoChange)
+
+	if err != nil && !noApply {
 		return fmt.Errorf("failed to apply migrations: %w", err)
 	}
 
-	log.Zap.Info("Migrations applied successfully")
+	if !noApply {
+		log.Zap.Info("Migrations applied successfully")
+	}
 	return nil
 }
