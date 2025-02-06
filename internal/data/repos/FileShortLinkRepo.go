@@ -88,15 +88,22 @@ func (repo *FileShortLinkRepo) loadFromFile() ([]models.ShortLinkData, error) {
 }
 
 func (repo *FileShortLinkRepo) writeLink(link models.ShortLinkData) error {
+	writer := bufio.NewWriter(repo.storageFile)
 	data, err := json.Marshal(link)
 	if err != nil {
 		return fmt.Errorf("failed serialize ShortLinkData: %w", err)
 	}
 
-	data = append(data, '\n')
-	_, err = repo.storageFile.Write(data)
+	if _, err := writer.Write(data); err != nil {
+		return fmt.Errorf("failed write to file buffer: %w", err)
+	}
+	if err := writer.WriteByte('\n'); err != nil {
+		return fmt.Errorf("failed write \\n to file buffer: %w", err)
+	}
+
+	err = writer.Flush()
 	if err != nil {
-		return fmt.Errorf("failed write to file storage: %w", err)
+		return fmt.Errorf("failed flush buffer to fileStorage: %w", err)
 	}
 	return nil
 }
