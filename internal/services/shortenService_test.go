@@ -67,9 +67,9 @@ func TestNaiveShortenService_GetURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRepo.On("GetURL", tt.shortID).Return(tt.want.fullURL)
-			result := service.GetURL(tt.shortID)
-
+			mockRepo.On("GetURL", tt.shortID).Return(tt.want.fullURL, nil)
+			result, err := service.GetURL(tt.shortID)
+			assert.NoError(t, err, "no expect error get url")
 			assert.Equal(t, tt.want.fullURL, result)
 		})
 	}
@@ -85,7 +85,7 @@ func (repo *MockShortLinkRepo) CreateShortLink(shortID string, fullURL string) e
 	return nil
 }
 
-func (repo *MockShortLinkRepo) GetURL(key string) string {
+func (repo *MockShortLinkRepo) GetURL(key string) (string, error) {
 	args := repo.Called(key)
-	return args.String(0)
+	return args.String(0), args.Error(1)
 }

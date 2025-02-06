@@ -156,7 +156,7 @@ func (repo *MockShorterService) CreateShortLink(url string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (repo *MockShorterService) GetURL(key string) string {
+func (repo *MockShorterService) GetURL(key string) (string, error) {
 	args := repo.Called(key)
-	return args.String(0)
+	return args.String(0), args.Error(1)
 }

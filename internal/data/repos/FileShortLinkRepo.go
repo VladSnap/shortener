@@ -48,11 +48,11 @@ func (repo *FileShortLinkRepo) CreateShortLink(shortID string, fullURL string) e
 	return repo.writeLink(data)
 }
 
-func (repo *FileShortLinkRepo) GetURL(shortID string) string {
+func (repo *FileShortLinkRepo) GetURL(shortID string) (string, error) {
 	if data, ok := repo.links[shortID]; ok {
-		return data.OriginalURL
+		return data.OriginalURL, nil
 	}
-	return ""
+	return "", nil
 }
 
 func (repo *FileShortLinkRepo) Close() error {

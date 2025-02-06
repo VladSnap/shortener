@@ -15,6 +15,6 @@ func (repo *InMemoryShortLinkRepo) CreateShortLink(shortID string, fullURL strin
 	return nil
 }
 
-func (repo *InMemoryShortLinkRepo) GetURL(shortID string) string {
-	return repo.links[shortID]
+func (repo *InMemoryShortLinkRepo) GetURL(shortID string) (string, error) {
+	return repo.links[shortID], nil
 }

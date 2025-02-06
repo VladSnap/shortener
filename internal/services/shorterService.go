@@ -8,7 +8,7 @@ import (
 
 type ShortLinkRepo interface {
 	CreateShortLink(shortID string, fullURL string) error
-	GetURL(shortID string) string
+	GetURL(shortID string) (string, error)
 }
 
 type NaiveShorterService struct {
@@ -37,6 +37,10 @@ func (service *NaiveShorterService) CreateShortLink(fullURL string) (string, err
 	return shortID, nil
 }
 
-func (service *NaiveShorterService) GetURL(shortID string) string {
-	return service.shortLinkRepo.GetURL(shortID)
+func (service *NaiveShorterService) GetURL(shortID string) (string, error) {
+	fullURL, err := service.shortLinkRepo.GetURL(shortID)
+	if err != nil {
+		return "", fmt.Errorf("failed get url from repo: %w", err)
+	}
+	return fullURL, nil
 }

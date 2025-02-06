@@ -122,7 +122,7 @@ func TestGetHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService.On("GetURL", tt.id).Return(tt.url)
+			mockService.On("GetURL", tt.id).Return(tt.url, nil)
 
 			request := httptest.NewRequest(tt.httpMethod, tt.requestPath, http.NoBody)
 			request.SetPathValue("id", tt.id)
