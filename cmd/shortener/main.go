@@ -57,4 +57,14 @@ func logWorkDir() {
 	}
 
 	log.Zap.Infof("workdir: %s\n", dir)
+	log.Zap.Info("print all subdirs:")
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		log.Zap.Errorf("failed read workdir: %v\n", err)
+	}
+
+	for _, e := range entries {
+		log.Zap.Info(e.Name())
+	}
 }
