@@ -1,6 +1,6 @@
 package handlers
 
 type ShorterService interface {
-	CreateShortLink(fullURL string) (string, error)
+	CreateShortLink(originalURL string) (string, error)
 	GetURL(shortID string) (string, error)
 }

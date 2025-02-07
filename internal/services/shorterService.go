@@ -3,12 +3,14 @@ package services
 import (
 	"fmt"
 
+	"github.com/VladSnap/shortener/internal/data/models"
 	"github.com/VladSnap/shortener/internal/helpers"
+	"github.com/google/uuid"
 )
 
 type ShortLinkRepo interface {
-	CreateShortLink(shortID string, fullURL string) error
-	GetURL(shortID string) (string, error)
+	CreateShortLink(link *models.ShortLinkData) (*models.ShortLinkData, error)
+	GetURL(shortID string) (*models.ShortLinkData, error)
 }
 
 type NaiveShorterService struct {
@@ -23,24 +25,30 @@ func NewNaiveShorterService(repo ShortLinkRepo) *NaiveShorterService {
 
 const shortIDLength = 8
 
-func (service *NaiveShorterService) CreateShortLink(fullURL string) (string, error) {
+func (service *NaiveShorterService) CreateShortLink(originalURL string) (string, error) {
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return "", fmt.Errorf("failed create random: %w", err)
+	}
 	shortID, err := helpers.RandStringRunes(shortIDLength)
 	if err != nil {
 		return "", fmt.Errorf("failed create short url: %w", err)
 	}
-
-	err = service.shortLinkRepo.CreateShortLink(shortID, fullURL)
+	newLink := &models.ShortLinkData{UUID: id.String(), ShortURL: shortID, OriginalURL: originalURL}
+	createdLink, err := service.shortLinkRepo.CreateShortLink(newLink)
 	if err != nil {
 		return "", fmt.Errorf("failed create short link object: %w", err)
 	}
-
-	return shortID, nil
+	// Важно вернуть сокращенную ссылку из created объекта, т.к. мы могли не создавать его повторно, если он существует
+	return createdLink.ShortURL, nil
 }
 
 func (service *NaiveShorterService) GetURL(shortID string) (string, error) {
-	fullURL, err := service.shortLinkRepo.GetURL(shortID)
+	link, err := service.shortLinkRepo.GetURL(shortID)
 	if err != nil {
 		return "", fmt.Errorf("failed get url from repo: %w", err)
+	} else if link != nil {
+		return link.OriginalURL, nil
 	}
-	return fullURL, nil
+	return "", nil
 }
