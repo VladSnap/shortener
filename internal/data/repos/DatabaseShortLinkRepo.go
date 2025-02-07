@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/VladSnap/shortener/internal/data"
@@ -42,15 +43,15 @@ func (repo *DatabaseShortLinkRepo) GetURL(shortID string) (*models.ShortLinkData
 }
 
 func (repo *DatabaseShortLinkRepo) GetShortLink(shortID string) (*models.ShortLinkData, error) {
-	sql := `SELECT uuid, short_url, orig_url
+	sqlText := `SELECT uuid, short_url, orig_url
             FROM public.short_links
 			WHERE short_url = $1`
-	row := repo.database.QueryRowContext(context.Background(), sql, shortID)
+	row := repo.database.QueryRowContext(context.Background(), sqlText, shortID)
 
 	link := models.ShortLinkData{}
 	// порядок переменных должен соответствовать порядку колонок в запросе
 	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, fmt.Errorf("failed select from public.short_links: %w", err)
 	}
 
@@ -58,15 +59,15 @@ func (repo *DatabaseShortLinkRepo) GetShortLink(shortID string) (*models.ShortLi
 }
 
 func (repo *DatabaseShortLinkRepo) getShortLinkByOriginalURL(originalURL string) (*models.ShortLinkData, error) {
-	sql := `SELECT uuid, short_url, orig_url
+	sqlText := `SELECT uuid, short_url, orig_url
             FROM public.short_links
 			WHERE orig_url = $1`
-	row := repo.database.QueryRowContext(context.Background(), sql, originalURL)
+	row := repo.database.QueryRowContext(context.Background(), sqlText, originalURL)
 
 	link := models.ShortLinkData{}
 	// порядок переменных должен соответствовать порядку колонок в запросе
 	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, fmt.Errorf("failed select ByOriginalURL from public.short_links: %w", err)
 	}
 
