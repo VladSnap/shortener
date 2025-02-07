@@ -19,8 +19,18 @@ func NewDatabaseShortLinkRepo(database *data.DatabaseShortener) *DatabaseShortLi
 }
 
 func (repo *DatabaseShortLinkRepo) CreateShortLink(link *models.ShortLinkData) (*models.ShortLinkData, error) {
+	// Пробуем найти по оригинальной ссылке сокращенную, чтобы не делать попытку записи,
+	// т.к. в таблице есть ограничение на уникальность поля orig_url.
+	existLink, err := repo.getShortLinkByOriginalURL(link.OriginalURL)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed getShortLinkByOriginalURL: %w", err)
+	} else if existLink != nil {
+		return existLink, nil // Вернем найденный результат, чтобы возвратить сокращенную ссылку в ответ на запрос.
+	}
+
 	sql := "INSERT INTO public.short_links (uuid, short_url, orig_url) VALUES ($1, $2, $3)"
-	_, err := repo.database.ExecContext(context.Background(), sql, link.UUID, link.ShortURL, link.OriginalURL)
+	_, err = repo.database.ExecContext(context.Background(), sql, link.UUID, link.ShortURL, link.OriginalURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed insert to public.short_links new row: %w", err)
 	}
