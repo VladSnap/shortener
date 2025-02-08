@@ -1,10 +1,16 @@
 package app
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/VladSnap/shortener/internal/config"
+	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/middlewares"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -42,7 +48,21 @@ func NewChiShortenerServer(opts *config.Options,
 
 func (server *ChiShortenerServer) RunServer() error {
 	var httpListener = server.initServer()
-	err := http.ListenAndServe(server.opts.ListenAddress, httpListener)
+	// Создаем сервер.
+	serv := &http.Server{Addr: server.opts.ListenAddress, Handler: httpListener}
+	// Горутина для прослушивания сигналов завершения.
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+		<-sigChan
+
+		log.Zap.Info("Termination signal received. Stopping server....")
+		if err := serv.Shutdown(context.Background()); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Zap.Error("Error while stopping the server: %v\n", err)
+		}
+	}()
+	// Запускаем прослушивание запросов.
+	err := serv.ListenAndServe()
 	if err != nil {
 		return fmt.Errorf("failed server listen: %w", err)
 	}
