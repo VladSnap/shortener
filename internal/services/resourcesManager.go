@@ -1,6 +1,10 @@
 package services
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/VladSnap/shortener/internal/log"
+)
 
 // ResourceManager управляет жизненным циклом объектов, чтобы при завершении программы вызвать очистку.
 type ResourceManager struct {
@@ -21,6 +25,7 @@ func (rm *ResourceManager) Register(cleanupFunc func() error) {
 
 // Cleanup вызывает все зарегистрированные функции очистки.
 func (rm *ResourceManager) Cleanup() error {
+	log.Zap.Info("ResourceManager.Cleanup start")
 	rm.mu.Lock()
 	defer rm.mu.Unlock()
 	for _, cleanup := range rm.cleanupFuncs {
@@ -29,6 +34,6 @@ func (rm *ResourceManager) Cleanup() error {
 			return err
 		}
 	}
-
+	log.Zap.Info("ResourceManager.Cleanup finish")
 	return nil
 }
