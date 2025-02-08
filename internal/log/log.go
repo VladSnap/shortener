@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/VladSnap/shortener/internal/constants"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -13,7 +14,7 @@ var logFile *os.File
 
 func init() {
 	// Создаем файл для записи логов
-	file, err := os.OpenFile("shortener.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile("shortener.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, constants.FileRWPerm)
 	logFile = file
 	if err != nil {
 		fmt.Printf("Failed to open log file: %s", err)
@@ -37,10 +38,13 @@ func init() {
 func Close() error {
 	Zap.Info("Logger closing")
 	err := Zap.Sync()
-
 	if err != nil {
 		fmt.Printf("failed zap logger sync: %s", err.Error())
 	}
 
-	return logFile.Close()
+	err = logFile.Close()
+	if err != nil {
+		return fmt.Errorf("failed close log file: %w", err)
+	}
+	return nil
 }
