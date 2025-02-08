@@ -45,8 +45,9 @@ func main() {
 	err = server.RunServer()
 
 	if err != nil {
-		panic(err)
+		log.Zap.Errorf("failed stop server: %w", err)
 	}
+	log.Zap.Info("main.go end")
 }
 
 func logWorkDir(isPrint bool) {
