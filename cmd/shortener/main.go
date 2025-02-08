@@ -15,10 +15,6 @@ import (
 var resourceManager *services.ResourceManager
 
 func main() {
-	defer func() {
-		err := log.Zap.Sync()
-		panic(fmt.Errorf("failed zap logger sync: %w", err))
-	}()
 	logWorkDir(false)
 	resourceManager = services.NewResourceManager()
 	defer func() {
@@ -28,6 +24,8 @@ func main() {
 			panic(fmt.Errorf("failed resourceManager clean: %w", err))
 		}
 	}()
+	// Регаем функцию Sync Zap логов
+	resourceManager.Register(log.Close)
 
 	log.Zap.Info("run shorneter server", zap.Strings("Args", os.Args))
 
