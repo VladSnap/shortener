@@ -70,7 +70,7 @@ func (repo *DatabaseShortLinkRepo) getShortLinkByOriginalURL(originalURL string)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, false, fmt.Errorf("failed select ByOriginalURL from public.short_links: %w", err)
 	}
-	if err != sql.ErrNoRows {
+	if err == sql.ErrNoRows {
 		return &link, false, nil
 	}
 	return &link, true, nil
