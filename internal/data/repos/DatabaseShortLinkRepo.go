@@ -41,13 +41,16 @@ func (repo *DatabaseShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*d
 func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.ShortLinkData) (
 	[]*data.ShortLinkData, error) {
 	tx, err := repo.database.Begin()
+	isCommited := false
 	if err != nil {
 		return nil, fmt.Errorf("failed begin db transaction: %w", err)
 	}
 	defer func() {
-		err := tx.Rollback()
-		if err != nil {
-			log.Zap.Errorf("failed Rollback: %w", err)
+		if !isCommited {
+			err := tx.Rollback()
+			if err != nil {
+				log.Zap.Errorf("failed Rollback: %w", err)
+			}
 		}
 	}()
 
@@ -74,6 +77,7 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	if err != nil {
 		return nil, fmt.Errorf("failed commit transaction: %w", err)
 	}
+	isCommited = true
 
 	return links, nil
 }
