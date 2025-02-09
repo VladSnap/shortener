@@ -9,13 +9,13 @@ import (
 	"path/filepath"
 
 	"github.com/VladSnap/shortener/internal/constants"
-	"github.com/VladSnap/shortener/internal/data/models"
+	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/helpers"
 	"github.com/VladSnap/shortener/internal/log"
 )
 
 type FileShortLinkRepo struct {
-	links       map[string]*models.ShortLinkData
+	links       map[string]*data.ShortLinkData
 	storageFile *os.File
 }
 
@@ -36,7 +36,7 @@ func NewFileShortLinkRepo(fileStoragePath string) (*FileShortLinkRepo, error) {
 	return repo, nil
 }
 
-func (repo *FileShortLinkRepo) CreateShortLink(link *models.ShortLinkData) (*models.ShortLinkData, error) {
+func (repo *FileShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error) {
 	repo.links[link.ShortURL] = link
 	err := repo.writeLink(link)
 	if err != nil {
@@ -46,7 +46,7 @@ func (repo *FileShortLinkRepo) CreateShortLink(link *models.ShortLinkData) (*mod
 	return link, nil
 }
 
-func (repo *FileShortLinkRepo) GetURL(shortID string) (*models.ShortLinkData, error) {
+func (repo *FileShortLinkRepo) GetURL(shortID string) (*data.ShortLinkData, error) {
 	link := repo.links[shortID]
 	return link, nil
 }
@@ -61,13 +61,13 @@ func (repo *FileShortLinkRepo) Close() error {
 	return nil
 }
 
-func (repo *FileShortLinkRepo) loadFromFile() ([]*models.ShortLinkData, error) {
+func (repo *FileShortLinkRepo) loadFromFile() ([]*data.ShortLinkData, error) {
 	scanner := bufio.NewScanner(repo.storageFile)
-	var dataList []*models.ShortLinkData
+	var dataList []*data.ShortLinkData
 
 	for scanner.Scan() {
 		dataBytes := scanner.Bytes()
-		data := models.ShortLinkData{}
+		data := data.ShortLinkData{}
 		err := json.Unmarshal(dataBytes, &data)
 		if err != nil {
 			return nil, fmt.Errorf("failed deserialize ShortLinkData: %w", err)
@@ -83,7 +83,7 @@ func (repo *FileShortLinkRepo) loadFromFile() ([]*models.ShortLinkData, error) {
 	return dataList, nil
 }
 
-func (repo *FileShortLinkRepo) writeLink(link *models.ShortLinkData) error {
+func (repo *FileShortLinkRepo) writeLink(link *data.ShortLinkData) error {
 	writer := bufio.NewWriter(repo.storageFile)
 	data, err := json.Marshal(link)
 	if err != nil {
@@ -120,12 +120,12 @@ func createFileStorage(fileStoragePath string) (*os.File, error) {
 	return file, nil
 }
 
-func (repo *FileShortLinkRepo) loadLinks() (map[string]*models.ShortLinkData, error) {
+func (repo *FileShortLinkRepo) loadLinks() (map[string]*data.ShortLinkData, error) {
 	links, err := repo.loadFromFile()
 	if err != nil {
 		return nil, fmt.Errorf("failed load from file storage: %w", err)
 	}
-	linkMap := make(map[string]*models.ShortLinkData, len(links))
+	linkMap := make(map[string]*data.ShortLinkData, len(links))
 	for _, link := range links {
 		linkMap[link.ShortURL] = link
 	}

@@ -3,7 +3,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	models "github.com/VladSnap/shortener/internal/data/models"
+	data "github.com/VladSnap/shortener/internal/data"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -31,10 +31,10 @@ func (m *MockShortLinkRepo) EXPECT() *MockShortLinkRepoMockRecorder {
 }
 
 // CreateShortLink mocks base method.
-func (m *MockShortLinkRepo) CreateShortLink(arg0 *models.ShortLinkData) (*models.ShortLinkData, error) {
+func (m *MockShortLinkRepo) CreateShortLink(arg0 *data.ShortLinkData) (*data.ShortLinkData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateShortLink", arg0)
-	ret0, _ := ret[0].(*models.ShortLinkData)
+	ret0, _ := ret[0].(*data.ShortLinkData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -47,10 +47,10 @@ func (mr *MockShortLinkRepoMockRecorder) CreateShortLink(arg0 interface{}) *gomo
 }
 
 // GetURL mocks base method.
-func (m *MockShortLinkRepo) GetURL(arg0 string) (*models.ShortLinkData, error) {
+func (m *MockShortLinkRepo) GetURL(arg0 string) (*data.ShortLinkData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetURL", arg0)
-	ret0, _ := ret[0].(*models.ShortLinkData)
+	ret0, _ := ret[0].(*data.ShortLinkData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

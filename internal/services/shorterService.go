@@ -3,14 +3,14 @@ package services
 import (
 	"fmt"
 
-	"github.com/VladSnap/shortener/internal/data/models"
+	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/helpers"
 	"github.com/google/uuid"
 )
 
 type ShortLinkRepo interface {
-	CreateShortLink(link *models.ShortLinkData) (*models.ShortLinkData, error)
-	GetURL(shortID string) (*models.ShortLinkData, error)
+	CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error)
+	GetURL(shortID string) (*data.ShortLinkData, error)
 }
 
 type NaiveShorterService struct {
@@ -34,7 +34,7 @@ func (service *NaiveShorterService) CreateShortLink(originalURL string) (string,
 	if err != nil {
 		return "", fmt.Errorf("failed create short url: %w", err)
 	}
-	newLink := &models.ShortLinkData{UUID: id.String(), ShortURL: shortID, OriginalURL: originalURL}
+	newLink := &data.ShortLinkData{UUID: id.String(), ShortURL: shortID, OriginalURL: originalURL}
 	createdLink, err := service.shortLinkRepo.CreateShortLink(newLink)
 	if err != nil {
 		return "", fmt.Errorf("failed create short link object: %w", err)

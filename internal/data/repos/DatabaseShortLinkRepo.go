@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/VladSnap/shortener/internal/data"
-	"github.com/VladSnap/shortener/internal/data/models"
 )
 
 type DatabaseShortLinkRepo struct {
@@ -19,7 +18,7 @@ func NewDatabaseShortLinkRepo(database *data.DatabaseShortener) *DatabaseShortLi
 	return repo
 }
 
-func (repo *DatabaseShortLinkRepo) CreateShortLink(link *models.ShortLinkData) (*models.ShortLinkData, error) {
+func (repo *DatabaseShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error) {
 	// Пробуем найти по оригинальной ссылке сокращенную, чтобы не делать попытку записи,
 	// т.к. в таблице есть ограничение на уникальность поля orig_url.
 	existLink, ok, err := repo.getShortLinkByOriginalURL(link.OriginalURL)
@@ -38,17 +37,17 @@ func (repo *DatabaseShortLinkRepo) CreateShortLink(link *models.ShortLinkData) (
 	return link, nil
 }
 
-func (repo *DatabaseShortLinkRepo) GetURL(shortID string) (*models.ShortLinkData, error) {
+func (repo *DatabaseShortLinkRepo) GetURL(shortID string) (*data.ShortLinkData, error) {
 	return repo.GetShortLink(shortID)
 }
 
-func (repo *DatabaseShortLinkRepo) GetShortLink(shortID string) (*models.ShortLinkData, error) {
+func (repo *DatabaseShortLinkRepo) GetShortLink(shortID string) (*data.ShortLinkData, error) {
 	sqlText := `SELECT uuid, short_url, orig_url
             FROM public.short_links
 			WHERE short_url = $1`
 	row := repo.database.QueryRowContext(context.Background(), sqlText, shortID)
 
-	link := models.ShortLinkData{}
+	link := data.ShortLinkData{}
 	// порядок переменных должен соответствовать порядку колонок в запросе
 	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL)
 	if err != nil && err != sql.ErrNoRows {
@@ -58,13 +57,13 @@ func (repo *DatabaseShortLinkRepo) GetShortLink(shortID string) (*models.ShortLi
 	return &link, nil
 }
 
-func (repo *DatabaseShortLinkRepo) getShortLinkByOriginalURL(originalURL string) (*models.ShortLinkData, bool, error) {
+func (repo *DatabaseShortLinkRepo) getShortLinkByOriginalURL(originalURL string) (*data.ShortLinkData, bool, error) {
 	sqlText := `SELECT uuid, short_url, orig_url
             FROM public.short_links
 			WHERE orig_url = $1`
 	row := repo.database.QueryRowContext(context.Background(), sqlText, originalURL)
 
-	link := models.ShortLinkData{}
+	link := data.ShortLinkData{}
 	// порядок переменных должен соответствовать порядку колонок в запросе
 	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL)
 	if err != nil && err != sql.ErrNoRows {

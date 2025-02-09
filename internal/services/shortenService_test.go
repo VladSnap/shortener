@@ -3,7 +3,7 @@ package services
 import (
 	"testing"
 
-	"github.com/VladSnap/shortener/internal/data/models"
+	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -83,7 +83,7 @@ func TestNaiveShortenService_GetURL(t *testing.T) {
 	}
 }
 
-func getNewShortLink(shortID string, originalURL string) *models.ShortLinkData {
+func getNewShortLink(shortID string, originalURL string) *data.ShortLinkData {
 	id := uuid.MustParse("2093ad7c-6227-4d97-8f83-9e837ab6474b")
-	return &models.ShortLinkData{UUID: id.String(), ShortURL: shortID, OriginalURL: originalURL}
+	return &data.ShortLinkData{UUID: id.String(), ShortURL: shortID, OriginalURL: originalURL}
 }
