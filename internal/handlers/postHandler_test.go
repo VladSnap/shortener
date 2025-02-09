@@ -157,9 +157,11 @@ func (repo *MockShorterService) CreateShortLink(url string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (repo *MockShorterService) CreateShortLinkBatch(originalLinks []*services.OriginalLink) ([]*services.ShortedLink, error) {
+func (repo *MockShorterService) CreateShortLinkBatch(originalLinks []*services.OriginalLink) (
+	[]*services.ShortedLink, error) {
 	args := repo.Called(originalLinks)
-	return args.Get(0).([]*services.ShortedLink), args.Error(1)
+	r0, _ := args.Get(0).([]*services.ShortedLink)
+	return r0, args.Error(1) //nolint:wrapcheck // temp ignore
 }
 
 func (repo *MockShorterService) GetURL(key string) (string, error) {

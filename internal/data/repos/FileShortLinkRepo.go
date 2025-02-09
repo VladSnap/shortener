@@ -73,13 +73,13 @@ func (repo *FileShortLinkRepo) loadFromFile() ([]*data.ShortLinkData, error) {
 
 	for scanner.Scan() {
 		dataBytes := scanner.Bytes()
-		data := data.ShortLinkData{}
-		err := json.Unmarshal(dataBytes, &data)
+		sd := data.ShortLinkData{}
+		err := json.Unmarshal(dataBytes, &sd)
 		if err != nil {
 			return nil, fmt.Errorf("failed deserialize ShortLinkData: %w", err)
 		}
 
-		dataList = append(dataList, &data)
+		dataList = append(dataList, &sd)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -91,12 +91,12 @@ func (repo *FileShortLinkRepo) loadFromFile() ([]*data.ShortLinkData, error) {
 
 func (repo *FileShortLinkRepo) writeLink(link *data.ShortLinkData) error {
 	writer := bufio.NewWriter(repo.storageFile)
-	data, err := json.Marshal(link)
+	sd, err := json.Marshal(link)
 	if err != nil {
 		return fmt.Errorf("failed serialize ShortLinkData: %w", err)
 	}
 
-	if _, err := writer.Write(data); err != nil {
+	if _, err := writer.Write(sd); err != nil {
 		return fmt.Errorf("failed write to file buffer: %w", err)
 	}
 	if err := writer.WriteByte('\n'); err != nil {

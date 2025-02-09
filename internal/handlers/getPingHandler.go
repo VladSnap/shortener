@@ -51,7 +51,7 @@ func (handler *GetPingHandler) Handle(res http.ResponseWriter, req *http.Request
 	res.WriteHeader(http.StatusOK)
 	_, err = res.Write([]byte("OK"))
 	if err != nil {
-		log.Zap.Errorf("failed write to response: %w", err)
+		log.Zap.Errorf(ErrFailedWriteToResponse, err)
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}

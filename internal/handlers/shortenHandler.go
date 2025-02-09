@@ -37,7 +37,7 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 
 	ct := req.Header.Get("content-type")
 
-	if ct != "application/json" && ct != "application/x-gzip" && ct != "application/json; charset=utf-8" {
+	if !strings.Contains(ct, HeaderApplicationJSON) && !strings.Contains(ct, HeaderApplicationXgzip) {
 		http.Error(res, "Incorrect content-type:"+ct, http.StatusBadRequest)
 		return
 	}
@@ -77,7 +77,7 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 	err = json.NewEncoder(res).Encode(result)
 
 	if err != nil {
-		log.Zap.Errorf("failed write to response: %w", err)
+		log.Zap.Errorf(ErrFailedWriteToResponse, err)
 		return
 	}
 }

@@ -36,7 +36,7 @@ func TestShortenHandler(t *testing.T) {
 			shortID:     "fVdpTFBo",
 			want: want{
 				code:         201,
-				contentType:  "application/json",
+				contentType:  HeaderApplicationJSON,
 				responseBody: fmt.Sprintf("{\"result\":\"%v/fVdpTFBo\"}\n", baseURL),
 			},
 		}, {
@@ -104,7 +104,7 @@ func TestShortenHandler(t *testing.T) {
 
 			r := bytes.NewReader(rqBytes)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)
-			postRequest.Header.Add("Content-Type", "application/json")
+			postRequest.Header.Add("Content-Type", HeaderApplicationJSON)
 			w := httptest.NewRecorder()
 			handler.Handle(w, postRequest)
 			res := w.Result()
