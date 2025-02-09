@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/VladSnap/shortener/internal/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -154,6 +155,11 @@ func TestPostHandler(t *testing.T) {
 func (repo *MockShorterService) CreateShortLink(url string) (string, error) {
 	args := repo.Called(url)
 	return args.String(0), args.Error(1)
+}
+
+func (repo *MockShorterService) CreateShortLinkBatch(originalLinks []*services.OriginalLink) ([]*services.ShortedLink, error) {
+	args := repo.Called(originalLinks)
+	return args.Get(0).([]*services.ShortedLink), args.Error(1)
 }
 
 func (repo *MockShorterService) GetURL(key string) (string, error) {
