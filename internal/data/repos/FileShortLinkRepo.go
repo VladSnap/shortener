@@ -49,7 +49,16 @@ func (repo *FileShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*data.
 
 func (repo *FileShortLinkRepo) AddBatch(ctx context.Context, links []*data.ShortLinkData) (
 	[]*data.ShortLinkData, error) {
-	return nil, nil
+	for _, link := range links {
+		repo.links[link.ShortURL] = link
+	}
+
+	err := repo.writeLinkBatch(links)
+	if err != nil {
+		return nil, fmt.Errorf("failed write batch links to file storage: %w", err)
+	}
+
+	return links, nil
 }
 
 func (repo *FileShortLinkRepo) GetURL(shortID string) (*data.ShortLinkData, error) {
@@ -104,6 +113,29 @@ func (repo *FileShortLinkRepo) writeLink(link *data.ShortLinkData) error {
 	}
 
 	err = writer.Flush()
+	if err != nil {
+		return fmt.Errorf("failed flush buffer to fileStorage: %w", err)
+	}
+	return nil
+}
+
+func (repo *FileShortLinkRepo) writeLinkBatch(links []*data.ShortLinkData) error {
+	writer := bufio.NewWriter(repo.storageFile)
+	for _, link := range links {
+		sd, err := json.Marshal(link)
+		if err != nil {
+			return fmt.Errorf("failed serialize ShortLinkData: %w", err)
+		}
+
+		if _, err := writer.Write(sd); err != nil {
+			return fmt.Errorf("failed write to file buffer: %w", err)
+		}
+		if err := writer.WriteByte('\n'); err != nil {
+			return fmt.Errorf("failed write \\n to file buffer: %w", err)
+		}
+	}
+
+	err := writer.Flush()
 	if err != nil {
 		return fmt.Errorf("failed flush buffer to fileStorage: %w", err)
 	}

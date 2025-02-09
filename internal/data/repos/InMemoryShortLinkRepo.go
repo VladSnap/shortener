@@ -23,7 +23,10 @@ func (repo *InMemoryShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*d
 
 func (repo *InMemoryShortLinkRepo) AddBatch(ctx context.Context, links []*data.ShortLinkData) (
 	[]*data.ShortLinkData, error) {
-	return nil, nil
+	for _, link := range links {
+		repo.links[link.ShortURL] = link
+	}
+	return links, nil
 }
 
 func (repo *InMemoryShortLinkRepo) GetURL(shortID string) (*data.ShortLinkData, error) {
