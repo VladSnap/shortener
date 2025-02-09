@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/VladSnap/shortener/internal/data"
+	"github.com/VladSnap/shortener/internal/log"
 )
 
 type DatabaseShortLinkRepo struct {
@@ -35,6 +36,46 @@ func (repo *DatabaseShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*d
 		return nil, fmt.Errorf("failed insert to public.short_links new row: %w", err)
 	}
 	return link, nil
+}
+
+func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.ShortLinkData) (
+	[]*data.ShortLinkData, error) {
+	tx, err := repo.database.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed begin db transaction: %w", err)
+	}
+	defer func() {
+		err := tx.Rollback()
+		if err != nil {
+			log.Zap.Errorf("failed Rollback: %w", err)
+		}
+	}()
+
+	stmt, err := tx.PrepareContext(ctx,
+		"INSERT INTO public.short_links (uuid, short_url, orig_url)"+
+			" VALUES($1, $2, $3)")
+	if err != nil {
+		return nil, fmt.Errorf("failed prepare insert: %w", err)
+	}
+	defer func() {
+		err := stmt.Close()
+		if err != nil {
+			log.Zap.Errorf("failed stmt Close: %w", err)
+		}
+	}()
+
+	for _, link := range links {
+		_, err := stmt.ExecContext(ctx, link.UUID, link.ShortURL, link.OriginalURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed exec insert: %w", err)
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed commit transaction: %w", err)
+	}
+
+	return links, nil
 }
 
 func (repo *DatabaseShortLinkRepo) GetURL(shortID string) (*data.ShortLinkData, error) {

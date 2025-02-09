@@ -2,6 +2,7 @@ package repos
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -44,6 +45,11 @@ func (repo *FileShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*data.
 	}
 
 	return link, nil
+}
+
+func (repo *FileShortLinkRepo) AddBatch(ctx context.Context, links []*data.ShortLinkData) (
+	[]*data.ShortLinkData, error) {
+	return nil, nil
 }
 
 func (repo *FileShortLinkRepo) GetURL(shortID string) (*data.ShortLinkData, error) {

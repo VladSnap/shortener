@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/VladSnap/shortener/internal/data"
@@ -10,6 +11,7 @@ import (
 
 type ShortLinkRepo interface {
 	CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error)
+	AddBatch(ctx context.Context, links []*data.ShortLinkData) ([]*data.ShortLinkData, error)
 	GetURL(shortID string) (*data.ShortLinkData, error)
 }
 
