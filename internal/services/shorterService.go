@@ -15,6 +15,9 @@ type ShortLinkRepo interface {
 	GetURL(shortID string) (*data.ShortLinkData, error)
 }
 
+// Генерирует мок для ShortLinkRepo
+//go:generate mockgen -destination=mock_services_test.go -package services github.com/VladSnap/shortener/internal/services ShortLinkRepo
+
 type NaiveShorterService struct {
 	shortLinkRepo ShortLinkRepo
 }
