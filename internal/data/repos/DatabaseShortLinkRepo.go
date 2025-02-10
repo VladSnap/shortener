@@ -3,10 +3,20 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/log"
+)
+
+const checkStrg duplicateStrategy = OnConflict
+
+type duplicateStrategy int
+
+const (
+	PreCheck duplicateStrategy = iota
+	OnConflict
 )
 
 type DatabaseShortLinkRepo struct {
@@ -20,22 +30,46 @@ func NewDatabaseShortLinkRepo(database *data.DatabaseShortener) *DatabaseShortLi
 }
 
 func (repo *DatabaseShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error) {
-	// Пробуем найти по оригинальной ссылке сокращенную, чтобы не делать попытку записи,
-	// т.к. в таблице есть ограничение на уникальность поля orig_url.
-	existLink, ok, err := repo.getShortLinkByOriginalURL(link.OriginalURL)
+	if checkStrg == PreCheck {
+		// Пробуем найти по оригинальной ссылке сокращенную, чтобы не делать попытку записи,
+		// т.к. в таблице есть ограничение на уникальность поля orig_url.
+		existLink, ok, err := repo.getShortLinkByOriginalURL(link.OriginalURL)
 
-	if err != nil {
-		return nil, fmt.Errorf("failed getShortLinkByOriginalURL: %w", err)
-	} else if ok {
-		return existLink, nil // Вернем найденный результат, чтобы возвратить сокращенную ссылку в ответ на запрос.
-	}
+		if err != nil {
+			return nil, fmt.Errorf("failed getShortLinkByOriginalURL: %w", err)
+		} else if ok {
+			return existLink, nil // Вернем найденный результат, чтобы возвратить сокращенную ссылку в ответ на запрос.
+		}
 
-	sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url) VALUES ($1, $2, $3)"
-	_, err = repo.database.ExecContext(context.Background(), sqlText, link.UUID, link.ShortURL, link.OriginalURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed insert to public.short_links new row: %w", err)
+		sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url) VALUES ($1, $2, $3)"
+		_, err = repo.database.ExecContext(context.Background(), sqlText, link.UUID, link.ShortURL, link.OriginalURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed insert to public.short_links new row: %w", err)
+		}
+		return link, nil
+	} else if checkStrg == OnConflict {
+		sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url) VALUES ($1, $2, $3) " +
+			"ON CONFLICT (orig_url) DO UPDATE " +
+			"SET orig_url = short_links.orig_url " +
+			"RETURNING short_links.short_url"
+
+		row := repo.database.QueryRowContext(context.Background(), sqlText, link.UUID, link.ShortURL, link.OriginalURL)
+		if row.Err() != nil {
+			return nil, fmt.Errorf("failed insert to public.short_links new row: %w", row.Err())
+		}
+		var shortURL string
+		err := row.Scan(&shortURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed scan insert result from public.short_links new row: %w", err)
+		}
+		if shortURL == link.ShortURL {
+			return link, nil
+		} else {
+			return nil, data.NewDuplicateError(shortURL)
+		}
+	} else {
+		return nil, errors.New("invalid checkStrg value")
 	}
-	return link, nil
 }
 
 func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.ShortLinkData) (
