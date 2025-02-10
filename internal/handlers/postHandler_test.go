@@ -124,11 +124,11 @@ func TestPostHandler(t *testing.T) {
 	defer ctrl.Finish()
 	mockService := NewMockShorterService(ctrl)
 	postHandler := NewPostHandler(mockService, baseURL)
-	mockService.EXPECT().CreateShortLink("http://test6.url").Return("", errors.New("random fail"))
+	mockService.EXPECT().CreateShortLink("http://test6.url").Return("", errors.New("random fail")).AnyTimes()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService.EXPECT().CreateShortLink(tt.sourceURL).Return(tt.shortID, nil)
+			mockService.EXPECT().CreateShortLink(tt.sourceURL).Return(tt.shortID, nil).AnyTimes()
 
 			r := strings.NewReader(tt.sourceURL)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)
