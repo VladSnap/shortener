@@ -30,7 +30,8 @@ func NewDatabaseShortLinkRepo(database *data.DatabaseShortener) *DatabaseShortLi
 }
 
 func (repo *DatabaseShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error) {
-	if checkStrg == PreCheck {
+	switch {
+	case checkStrg == PreCheck:
 		// Пробуем найти по оригинальной ссылке сокращенную, чтобы не делать попытку записи,
 		// т.к. в таблице есть ограничение на уникальность поля orig_url.
 		existLink, ok, err := repo.getShortLinkByOriginalURL(link.OriginalURL)
@@ -47,12 +48,13 @@ func (repo *DatabaseShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*d
 			return nil, fmt.Errorf("failed insert to public.short_links new row: %w", err)
 		}
 		return link, nil
-	} else if checkStrg == OnConflict {
+	case checkStrg == OnConflict:
 		sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url) VALUES ($1, $2, $3) " +
 			"ON CONFLICT (orig_url) DO UPDATE " +
 			"SET orig_url = short_links.orig_url " +
 			"RETURNING short_links.short_url"
 
+		//nolint:execinquery // use ONCONFLICT and Return value
 		row := repo.database.QueryRowContext(context.Background(), sqlText, link.UUID, link.ShortURL, link.OriginalURL)
 		if row.Err() != nil {
 			return nil, fmt.Errorf("failed insert to public.short_links new row: %w", row.Err())
@@ -65,9 +67,9 @@ func (repo *DatabaseShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*d
 		if shortURL == link.ShortURL {
 			return link, nil
 		} else {
-			return nil, data.NewDuplicateError(shortURL)
+			return nil, data.NewDuplicateError(shortURL) //nolint:wrapcheck // is new error
 		}
-	} else {
+	default:
 		return nil, errors.New("invalid checkStrg value")
 	}
 }
