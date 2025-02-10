@@ -8,15 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/VladSnap/shortener/internal/services"
+	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
-
-type MockShorterService struct {
-	mock.Mock
-}
 
 const baseURL string = "http://localhost:8080"
 
@@ -125,13 +120,15 @@ func TestPostHandler(t *testing.T) {
 		},
 	}
 
-	mockService := new(MockShorterService)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockService := NewMockShorterService(ctrl)
 	postHandler := NewPostHandler(mockService, baseURL)
-	mockService.On("CreateShortLink", "http://test6.url").Return("", errors.New("random fail"))
+	mockService.EXPECT().CreateShortLink("http://test6.url").Return("", errors.New("random fail"))
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService.On("CreateShortLink", tt.sourceURL).Return(tt.shortID, nil)
+			mockService.EXPECT().CreateShortLink(tt.sourceURL).Return(tt.shortID, nil)
 
 			r := strings.NewReader(tt.sourceURL)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)
@@ -150,21 +147,4 @@ func TestPostHandler(t *testing.T) {
 			assert.Equal(t, tt.want.responseBody, shortURL, "Incorrect response short url")
 		})
 	}
-}
-
-func (repo *MockShorterService) CreateShortLink(url string) (string, error) {
-	args := repo.Called(url)
-	return args.String(0), args.Error(1)
-}
-
-func (repo *MockShorterService) CreateShortLinkBatch(originalLinks []*services.OriginalLink) (
-	[]*services.ShortedLink, error) {
-	args := repo.Called(originalLinks)
-	r0, _ := args.Get(0).([]*services.ShortedLink)
-	return r0, args.Error(1) //nolint:wrapcheck // temp ignore
-}
-
-func (repo *MockShorterService) GetURL(key string) (string, error) {
-	args := repo.Called(key)
-	return args.String(0), args.Error(1)
 }

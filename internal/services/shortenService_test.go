@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/VladSnap/shortener/internal/data"
-	"github.com/VladSnap/shortener/internal/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +24,7 @@ func TestNaiveShortenService_CreateShortLink(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	// создаём объект-заглушку
-	mockRepo := mocks.NewMockShortLinkRepo(ctrl)
+	mockRepo := NewMockShortLinkRepo(ctrl)
 	service := NewNaiveShorterService(mockRepo)
 
 	for _, tt := range tests {
@@ -69,7 +68,7 @@ func TestNaiveShortenService_GetURL(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	// создаём объект-заглушку
-	mockRepo := mocks.NewMockShortLinkRepo(ctrl)
+	mockRepo := NewMockShortLinkRepo(ctrl)
 	service := NewNaiveShorterService(mockRepo)
 
 	for _, tt := range tests {

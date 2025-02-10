@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -86,13 +87,15 @@ func TestShortenHandler(t *testing.T) {
 		},
 	}
 
-	mockService := new(MockShorterService)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockService := NewMockShorterService(ctrl)
 	handler := NewShortenHandler(mockService, baseURL)
-	mockService.On("CreateShortLink", "http://test6.url").Return("", errors.New("random fail"))
+	mockService.EXPECT().CreateShortLink("http://test6.url").Return("", errors.New("random fail")).AnyTimes()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService.On("CreateShortLink", tt.sourceURL).Return(tt.shortID, nil)
+			mockService.EXPECT().CreateShortLink(tt.sourceURL).Return(tt.shortID, nil).AnyTimes()
 
 			requestData := ShortenRequest{
 				URL: tt.sourceURL,
