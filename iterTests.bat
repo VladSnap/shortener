@@ -13,6 +13,7 @@ shortenertest -test.v -test.run=^TestIteration9$ -binary-path=C:\Develop\go\proj
 ::shortenertest -test.v -test.run=^TestIteration10$ -binary-path=C:\Develop\go\projects\shortener\cmd\shortener\shortener.exe -source-path=C:\Develop\go\projects\shortener -database-dsn="host=localhost user=postgres password=qwerty dbname=shortener sslmode=disable"
 shortenertest -test.v -test.run=^TestIteration11$ -binary-path=C:\Develop\go\projects\shortener\cmd\shortener\shortener.exe -database-dsn="host=localhost user=postgres password=qwerty dbname=shortener sslmode=disable"
 shortenertest -test.v -test.run=^TestIteration12$ -binary-path=C:\Develop\go\projects\shortener\cmd\shortener\shortener.exe -database-dsn="host=localhost user=postgres password=qwerty dbname=shortener sslmode=disable"
+shortenertest -test.v -test.run=^TestIteration13$ -binary-path=C:\Develop\go\projects\shortener\cmd\shortener\shortener.exe -database-dsn="host=localhost user=postgres password=qwerty dbname=shortener sslmode=disable"
 
 ::del cmd\shortener\shortener.exe
 
