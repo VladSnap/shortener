@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/VladSnap/shortener/internal/services"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -124,11 +125,13 @@ func TestPostHandler(t *testing.T) {
 	defer ctrl.Finish()
 	mockService := NewMockShorterService(ctrl)
 	postHandler := NewPostHandler(mockService, baseURL)
-	mockService.EXPECT().CreateShortLink("http://test6.url").Return("", errors.New("random fail")).AnyTimes()
+	ret := &services.ShortedLink{URL: ""}
+	mockService.EXPECT().CreateShortLink("http://test6.url").Return(ret, errors.New("random fail")).AnyTimes()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService.EXPECT().CreateShortLink(tt.sourceURL).Return(tt.shortID, nil).AnyTimes()
+			ret = &services.ShortedLink{URL: tt.shortID}
+			mockService.EXPECT().CreateShortLink(tt.sourceURL).Return(ret, nil).AnyTimes()
 
 			r := strings.NewReader(tt.sourceURL)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)

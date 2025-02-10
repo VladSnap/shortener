@@ -64,8 +64,12 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	}
 
 	res.Header().Add("Content-Type", "text/plain")
-	res.WriteHeader(http.StatusCreated)
-	_, err = res.Write([]byte(handler.baseURL + "/" + shortLink))
+	if shortLink.IsDuplicated {
+		res.WriteHeader(http.StatusConflict)
+	} else {
+		res.WriteHeader(http.StatusCreated)
+	}
+	_, err = res.Write([]byte(handler.baseURL + "/" + shortLink.URL))
 
 	if err != nil {
 		log.Zap.Errorf(ErrFailedWriteToResponse, err)

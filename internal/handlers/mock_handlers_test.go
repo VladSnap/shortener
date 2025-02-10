@@ -35,10 +35,10 @@ func (m *MockShorterService) EXPECT() *MockShorterServiceMockRecorder {
 }
 
 // CreateShortLink mocks base method.
-func (m *MockShorterService) CreateShortLink(arg0 string) (string, error) {
+func (m *MockShorterService) CreateShortLink(arg0 string) (*services.ShortedLink, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateShortLink", arg0)
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*services.ShortedLink)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

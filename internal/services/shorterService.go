@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/VladSnap/shortener/internal/data"
@@ -30,18 +31,27 @@ func NewNaiveShorterService(repo ShortLinkRepo) *NaiveShorterService {
 
 const shortIDLength = 8
 
-func (service *NaiveShorterService) CreateShortLink(originalURL string) (string, error) {
+func (service *NaiveShorterService) CreateShortLink(originalURL string) (*ShortedLink, error) {
 	id, shortID, err := createNewIds()
 	if err != nil {
-		return "", fmt.Errorf("failed create ids: %w", err)
+		return nil, fmt.Errorf("failed create ids: %w", err)
 	}
 	newLink := &data.ShortLinkData{UUID: id.String(), ShortURL: shortID, OriginalURL: originalURL}
 	createdLink, err := service.shortLinkRepo.CreateShortLink(newLink)
 	if err != nil {
-		return "", fmt.Errorf("failed create short link object: %w", err)
+		var duplErr *data.DuplicateShortLinkError
+		if errors.As(err, &duplErr) {
+			res := &ShortedLink{URL: duplErr.ShortURL, IsDuplicated: true}
+			return res, nil
+		}
+		return nil, fmt.Errorf("failed create short link object: %w", err)
 	}
-	// Важно вернуть сокращенную ссылку из created объекта, т.к. мы могли не создавать его повторно, если он существует
-	return createdLink.ShortURL, nil
+	res := &ShortedLink{
+		UUID: createdLink.UUID,
+		URL:  createdLink.ShortURL,
+		// Для стратегии PreChek, если короткие ссылки разные, значит был найден дубль и возвращено его значение.
+		IsDuplicated: shortID != createdLink.ShortURL}
+	return res, nil
 }
 
 func (service *NaiveShorterService) GetURL(shortID string) (string, error) {

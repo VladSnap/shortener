@@ -34,8 +34,9 @@ func TestNaiveShortenService_CreateShortLink(t *testing.T) {
 			result, err := service.CreateShortLink(tt.sourceURL)
 
 			assert.Nil(t, err)
-			assert.NotEmpty(t, result)
-			assert.Len(t, result, shortIDLength)
+			assert.NotNil(t, result)
+			assert.NotEmpty(t, result.URL)
+			assert.Len(t, result.URL, shortIDLength)
 		})
 	}
 }

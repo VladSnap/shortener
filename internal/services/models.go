@@ -10,4 +10,5 @@ type ShortedLink struct {
 	CorelationID string
 	OriginalURL  string
 	URL          string
+	IsDuplicated bool
 }
