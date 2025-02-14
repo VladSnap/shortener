@@ -9,9 +9,10 @@ import (
 )
 
 type Options struct {
-	ListenAddress   string `env:"SERVER_ADDRESS"`    // server listen address
-	BaseURL         string `env:"BASE_URL"`          // base url for short url
-	FileStoragePath string `env:"FILE_STORAGE_PATH"` // file path to storage all shorten url
+	ListenAddress      string `env:"SERVER_ADDRESS"`    // server listen address
+	BaseURL            string `env:"BASE_URL"`          // base url for short url
+	FileStoragePath    string `env:"FILE_STORAGE_PATH"` // file path to storage all shorten url
+	DataBaseConnString string `env:"DATABASE_DSN"`      // database connection string
 }
 
 type ConfigValidater interface {
@@ -38,6 +39,7 @@ func ParseFlags(validater ConfigValidater) (*Options, error) {
 	flag.StringVar(&opts.ListenAddress, "a", ":8080", "server listen address")
 	flag.StringVar(&opts.BaseURL, "b", "http://localhost:8080", "base url for short url")
 	flag.StringVar(&opts.FileStoragePath, "f", "", "file path to storage all shorten url")
+	flag.StringVar(&opts.DataBaseConnString, "d", "", "database connection string")
 
 	flag.Parse()
 

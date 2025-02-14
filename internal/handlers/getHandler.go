@@ -27,7 +27,12 @@ func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	url := handler.service.GetURL(shortID)
+	url, err := handler.service.GetURL(shortID)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	if url == "" {
 		http.Error(res, "Url not found", http.StatusNotFound)
 		return

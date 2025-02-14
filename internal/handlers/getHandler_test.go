@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -117,12 +118,14 @@ func TestGetHandler(t *testing.T) {
 		},
 	}
 
-	mockService := new(MockShorterService)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockService := NewMockShorterService(ctrl)
 	getHandler := NewGetHandler(mockService)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService.On("GetURL", tt.id).Return(tt.url)
+			mockService.EXPECT().GetURL(tt.id).Return(tt.url, nil).AnyTimes()
 
 			request := httptest.NewRequest(tt.httpMethod, tt.requestPath, http.NoBody)
 			request.SetPathValue("id", tt.id)

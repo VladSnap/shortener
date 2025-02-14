@@ -10,6 +10,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/VladSnap/shortener/internal/services"
+	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +38,7 @@ func TestShortenHandler(t *testing.T) {
 			shortID:     "fVdpTFBo",
 			want: want{
 				code:         201,
-				contentType:  "application/json",
+				contentType:  HeaderApplicationJSON,
 				responseBody: fmt.Sprintf("{\"result\":\"%v/fVdpTFBo\"}\n", baseURL),
 			},
 		}, {
@@ -86,13 +88,17 @@ func TestShortenHandler(t *testing.T) {
 		},
 	}
 
-	mockService := new(MockShorterService)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockService := NewMockShorterService(ctrl)
 	handler := NewShortenHandler(mockService, baseURL)
-	mockService.On("CreateShortLink", "http://test6.url").Return("", errors.New("random fail"))
+	ret := &services.ShortedLink{URL: ""}
+	mockService.EXPECT().CreateShortLink("http://test6.url").Return(ret, errors.New("random fail")).AnyTimes()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService.On("CreateShortLink", tt.sourceURL).Return(tt.shortID, nil)
+			ret = &services.ShortedLink{URL: tt.shortID}
+			mockService.EXPECT().CreateShortLink(tt.sourceURL).Return(ret, nil).AnyTimes()
 
 			requestData := ShortenRequest{
 				URL: tt.sourceURL,
@@ -104,7 +110,7 @@ func TestShortenHandler(t *testing.T) {
 
 			r := bytes.NewReader(rqBytes)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)
-			postRequest.Header.Add("Content-Type", "application/json")
+			postRequest.Header.Add("Content-Type", HeaderApplicationJSON)
 			w := httptest.NewRecorder()
 			handler.Handle(w, postRequest)
 			res := w.Result()

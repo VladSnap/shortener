@@ -1,16 +1,13 @@
 package services
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/VladSnap/shortener/internal/data"
+	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
-
-type MockShortLinkRepo struct {
-	mock.Mock
-}
 
 func TestNaiveShortenService_CreateShortLink(t *testing.T) {
 	tests := []struct {
@@ -23,17 +20,23 @@ func TestNaiveShortenService_CreateShortLink(t *testing.T) {
 		},
 	}
 
-	mockRepo := new(MockShortLinkRepo)
+	// создаём контроллер
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	// создаём объект-заглушку
+	mockRepo := NewMockShortLinkRepo(ctrl)
 	service := NewNaiveShorterService(mockRepo)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRepo.On("CreateShortLink", mock.AnythingOfType("string"), tt.sourceURL).Return(nil)
+			retLink := getNewShortLink("tttttttt", tt.sourceURL)
+			mockRepo.EXPECT().CreateShortLink(gomock.Any()).Return(retLink, nil)
 			result, err := service.CreateShortLink(tt.sourceURL)
 
 			assert.Nil(t, err)
-			assert.NotEmpty(t, result)
-			assert.Len(t, result, shortIDLength)
+			assert.NotNil(t, result)
+			assert.NotEmpty(t, result.URL)
+			assert.Len(t, result.URL, shortIDLength)
 		})
 	}
 }
@@ -62,30 +65,25 @@ func TestNaiveShortenService_GetURL(t *testing.T) {
 		},
 	}
 
-	mockRepo := new(MockShortLinkRepo)
+	// создаём контроллер
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	// создаём объект-заглушку
+	mockRepo := NewMockShortLinkRepo(ctrl)
 	service := NewNaiveShorterService(mockRepo)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRepo.On("GetURL", tt.shortID).Return(tt.want.fullURL)
-			result := service.GetURL(tt.shortID)
-
+			retLink := getNewShortLink(tt.shortID, tt.want.fullURL)
+			mockRepo.EXPECT().GetURL(tt.shortID).Return(retLink, nil)
+			result, err := service.GetURL(tt.shortID)
+			assert.NoError(t, err, "no expect error get url")
 			assert.Equal(t, tt.want.fullURL, result)
 		})
 	}
 }
 
-func (repo *MockShortLinkRepo) CreateShortLink(shortID string, fullURL string) error {
-	args := repo.Called(shortID, fullURL)
-	err := args.Error(0)
-
-	if err != nil {
-		return fmt.Errorf("failed mock call CreateShortLink: %w", err)
-	}
-	return nil
-}
-
-func (repo *MockShortLinkRepo) GetURL(key string) string {
-	args := repo.Called(key)
-	return args.String(0)
+func getNewShortLink(shortID string, originalURL string) *data.ShortLinkData {
+	id := uuid.MustParse("2093ad7c-6227-4d97-8f83-9e837ab6474b")
+	return &data.ShortLinkData{UUID: id.String(), ShortURL: shortID, OriginalURL: originalURL}
 }

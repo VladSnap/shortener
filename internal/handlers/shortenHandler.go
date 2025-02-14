@@ -37,7 +37,7 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 
 	ct := req.Header.Get("content-type")
 
-	if ct != "application/json" && ct != "application/x-gzip" && ct != "application/json; charset=utf-8" {
+	if !strings.Contains(ct, HeaderApplicationJSON) && !strings.Contains(ct, HeaderApplicationXgzip) {
 		http.Error(res, "Incorrect content-type:"+ct, http.StatusBadRequest)
 		return
 	}
@@ -70,14 +70,18 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 		return
 	}
 
-	result := ShortenResponse{Result: handler.baseURL + "/" + shortLink}
+	result := ShortenResponse{Result: handler.baseURL + "/" + shortLink.URL}
 
 	res.Header().Add("Content-Type", "application/json")
-	res.WriteHeader(http.StatusCreated)
+	if shortLink.IsDuplicated {
+		res.WriteHeader(http.StatusConflict)
+	} else {
+		res.WriteHeader(http.StatusCreated)
+	}
 	err = json.NewEncoder(res).Encode(result)
 
 	if err != nil {
-		log.Zap.Errorf("failed write to response: %w", err)
+		log.Zap.Errorf(ErrFailedWriteToResponse, err)
 		return
 	}
 }

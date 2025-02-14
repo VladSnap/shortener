@@ -34,7 +34,7 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 
 	ct := req.Header.Get("content-type")
 
-	if ct != "text/plain" && ct != "text/plain; charset=utf-8" && ct != "application/x-gzip" {
+	if !strings.Contains(ct, "text/plain") && !strings.Contains(ct, HeaderApplicationXgzip) {
 		http.Error(res, "Incorrect content-type:"+ct, http.StatusBadRequest)
 		return
 	}
@@ -64,11 +64,15 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	}
 
 	res.Header().Add("Content-Type", "text/plain")
-	res.WriteHeader(http.StatusCreated)
-	_, err = res.Write([]byte(handler.baseURL + "/" + shortLink))
+	if shortLink.IsDuplicated {
+		res.WriteHeader(http.StatusConflict)
+	} else {
+		res.WriteHeader(http.StatusCreated)
+	}
+	_, err = res.Write([]byte(handler.baseURL + "/" + shortLink.URL))
 
 	if err != nil {
-		log.Zap.Errorf("failed write to response: %w", err)
+		log.Zap.Errorf(ErrFailedWriteToResponse, err)
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}

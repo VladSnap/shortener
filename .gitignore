@@ -23,4 +23,5 @@ vendor/
 .vscode
 
 #custom
-golangci-lint
+pgdata/
+*.log

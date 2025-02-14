@@ -40,7 +40,7 @@ func (w *gzipWriter) WriteHeader(statusCode int) {
 	ct := w.Header().Get("Content-Type")
 
 	// Надо проверить какой у нас контент будет в качестве ответа, чтобы принять решение, надо ли сжимать данные
-	if ct != "" && slices.Contains(*gzipContentTypes, ct) && statusCode < 300 {
+	if ct != "" && slices.Contains(*gzipContentTypes, ct) && (statusCode < 300 || statusCode > 399) {
 		w.Header().Add("Content-Encoding", "gzip")
 		w.isCompressed = true
 	}

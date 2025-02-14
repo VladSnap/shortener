@@ -15,10 +15,7 @@ import (
 var resourceManager *services.ResourceManager
 
 func main() {
-	defer func() {
-		err := log.Zap.Sync()
-		panic(fmt.Errorf("failed zap logger sync: %w", err))
-	}()
+	logWorkDir(false)
 	resourceManager = services.NewResourceManager()
 	defer func() {
 		err := resourceManager.Cleanup()
@@ -27,6 +24,8 @@ func main() {
 			panic(fmt.Errorf("failed resourceManager clean: %w", err))
 		}
 	}()
+	// Регаем функцию Sync Zap логов
+	resourceManager.Register(log.Close)
 
 	log.Zap.Info("run shorneter server", zap.Strings("Args", os.Args))
 
@@ -44,6 +43,31 @@ func main() {
 	err = server.RunServer()
 
 	if err != nil {
-		panic(err)
+		log.Zap.Errorf("failed stop server: %w", err)
+	}
+	log.Zap.Info("main.go end")
+}
+
+func logWorkDir(isPrint bool) {
+	if !isPrint {
+		return
+	}
+
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Zap.Errorf("failed get workdir: %v\n", err)
+		return
+	}
+
+	log.Zap.Infof("workdir: %s\n", dir)
+	log.Zap.Info("print all subdirs:")
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		log.Zap.Errorf("failed read workdir: %v\n", err)
+	}
+
+	for _, e := range entries {
+		log.Zap.Info(e.Name())
 	}
 }
