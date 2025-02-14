@@ -51,7 +51,7 @@ func TestShortenHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Full URL verify error\n",
+				responseBody: "URL verify error\n",
 			},
 		}, {
 			name:        "request body is empty",
