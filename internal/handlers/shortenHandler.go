@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/VladSnap/shortener/internal/log"
-	urlverifier "github.com/davidmytton/url-verifier"
+	"github.com/VladSnap/shortener/internal/validation"
 )
 
 type ShortenRequest struct {
@@ -56,10 +56,8 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 
 	request.URL = strings.TrimSuffix(request.URL, "\r")
 	request.URL = strings.TrimSuffix(request.URL, "\n")
-	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(request.URL)
-
-	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
-		http.Error(res, "Full URL verify error", http.StatusBadRequest)
+	if err := validation.ValidateURL(request.URL, "URL"); err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
 

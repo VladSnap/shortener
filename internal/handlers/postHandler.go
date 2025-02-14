@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/VladSnap/shortener/internal/log"
-	urlverifier "github.com/davidmytton/url-verifier"
+	"github.com/VladSnap/shortener/internal/validation"
 )
 
 type PostHandler struct {
@@ -33,7 +33,6 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	}
 
 	ct := req.Header.Get("content-type")
-
 	if !strings.Contains(ct, "text/plain") && !strings.Contains(ct, HeaderApplicationXgzip) {
 		http.Error(res, "Incorrect content-type:"+ct, http.StatusBadRequest)
 		return
@@ -46,13 +45,10 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Required url", http.StatusBadRequest)
 		return
 	}
-
 	fullURL = strings.TrimSuffix(fullURL, "\r")
 	fullURL = strings.TrimSuffix(fullURL, "\n")
-	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(fullURL)
-
-	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
-		http.Error(res, "Full URL verify error", http.StatusBadRequest)
+	if err := validation.ValidateURL(fullURL, "req.Body"); err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
 

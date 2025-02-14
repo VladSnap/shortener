@@ -2,14 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/services"
-	urlverifier "github.com/davidmytton/url-verifier"
+	"github.com/VladSnap/shortener/internal/validation"
 )
 
 type ShortenRowRequest struct {
@@ -56,7 +55,9 @@ func (handler *BatchHandler) Handle(res http.ResponseWriter, req *http.Request) 
 
 	links := make([]*services.OriginalLink, 0, len(requestRows))
 	for _, r := range requestRows {
-		if err := validateRequestRow(r); err != nil {
+		r.OriginalURL = strings.TrimSuffix(r.OriginalURL, "\r")
+		r.OriginalURL = strings.TrimSuffix(r.OriginalURL, "\n")
+		if err := validation.ValidateURL(r.OriginalURL, "OriginalURL"); err != nil {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -98,20 +99,4 @@ func (handler *BatchHandler) Handle(res http.ResponseWriter, req *http.Request) 
 		log.Zap.Errorf(ErrFailedWriteToResponse, err)
 		return
 	}
-}
-
-func validateRequestRow(rqRow ShortenRowRequest) error {
-	if rqRow.OriginalURL == "" {
-		return errors.New("required url")
-	}
-
-	rqRow.OriginalURL = strings.TrimSuffix(rqRow.OriginalURL, "\r")
-	rqRow.OriginalURL = strings.TrimSuffix(rqRow.OriginalURL, "\n")
-	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(rqRow.OriginalURL)
-
-	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
-		return errors.New("originalURL verify error")
-	}
-
-	return nil
 }
