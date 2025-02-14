@@ -36,21 +36,19 @@ func (service *NaiveShorterService) CreateShortLink(ctx context.Context, origina
 	if err != nil {
 		return nil, fmt.Errorf("failed create ids: %w", err)
 	}
-	newLink := &data.ShortLinkData{UUID: id.String(), ShortURL: shortID, OriginalURL: originalURL}
+	newLink := data.NewShortLinkData(id.String(), shortID, originalURL)
 	createdLink, err := service.shortLinkRepo.Add(ctx, newLink)
 	if err != nil {
 		var duplErr *data.DuplicateShortLinkError
 		if errors.As(err, &duplErr) {
-			res := &ShortedLink{URL: duplErr.ShortURL, IsDuplicated: true}
+			res := NewShortedLink("", "", "", duplErr.ShortURL, true)
 			return res, nil
 		}
 		return nil, fmt.Errorf("failed create short link object: %w", err)
 	}
-	res := &ShortedLink{
-		UUID: createdLink.UUID,
-		URL:  createdLink.ShortURL,
-		// Для стратегии PreChek, если короткие ссылки разные, значит был найден дубль и возвращено его значение.
-		IsDuplicated: shortID != createdLink.ShortURL}
+	// Если короткие ссылки разные, значит был найден дубль и возвращено его значение.
+	isDuplicate := shortID != createdLink.ShortURL
+	res := NewShortedLink(createdLink.UUID, "", createdLink.OriginalURL, createdLink.ShortURL, isDuplicate)
 	return res, nil
 }
 
@@ -78,19 +76,9 @@ func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context, or
 		if err != nil {
 			return nil, fmt.Errorf("failed create ids: %w", err)
 		}
-
-		dm := &data.ShortLinkData{
-			UUID:        id.String(),
-			ShortURL:    shortID,
-			OriginalURL: ol.URL,
-		}
+		dm := data.NewShortLinkData(id.String(), shortID, ol.URL)
 		dataModels = append(dataModels, dm)
-		cm := &ShortedLink{
-			UUID:         id.String(),
-			CorelationID: ol.CorelationID,
-			OriginalURL:  ol.URL,
-			URL:          shortID,
-		}
+		cm := NewShortedLink(id.String(), ol.CorelationID, ol.URL, shortID, false)
 		createdModels = append(createdModels, cm)
 	}
 
