@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -88,17 +89,20 @@ func TestShortenHandler(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockService := NewMockShorterService(ctrl)
 	handler := NewShortenHandler(mockService, baseURL)
 	ret := &services.ShortedLink{URL: ""}
-	mockService.EXPECT().CreateShortLink("http://test6.url").Return(ret, errors.New("random fail")).AnyTimes()
+	mockService.EXPECT().CreateShortLink(ctx, "http://test6.url").
+		Return(ret, errors.New("random fail")).AnyTimes()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ret = &services.ShortedLink{URL: tt.shortID}
-			mockService.EXPECT().CreateShortLink(tt.sourceURL).Return(ret, nil).AnyTimes()
+			mockService.EXPECT().CreateShortLink(ctx, tt.sourceURL).
+				Return(ret, nil).AnyTimes()
 
 			requestData := ShortenRequest{
 				URL: tt.sourceURL,

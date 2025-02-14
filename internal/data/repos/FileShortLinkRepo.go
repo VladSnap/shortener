@@ -37,7 +37,7 @@ func NewFileShortLinkRepo(fileStoragePath string) (*FileShortLinkRepo, error) {
 	return repo, nil
 }
 
-func (repo *FileShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error) {
+func (repo *FileShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData) (*data.ShortLinkData, error) {
 	repo.links[link.ShortURL] = link
 	err := repo.writeLink(link)
 	if err != nil {
@@ -61,7 +61,7 @@ func (repo *FileShortLinkRepo) AddBatch(ctx context.Context, links []*data.Short
 	return links, nil
 }
 
-func (repo *FileShortLinkRepo) GetURL(shortID string) (*data.ShortLinkData, error) {
+func (repo *FileShortLinkRepo) Get(ctx context.Context, shortID string) (*data.ShortLinkData, error) {
 	link := repo.links[shortID]
 	return link, nil
 }

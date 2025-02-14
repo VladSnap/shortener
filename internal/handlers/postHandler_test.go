@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -121,17 +122,22 @@ func TestPostHandler(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockService := NewMockShorterService(ctrl)
 	postHandler := NewPostHandler(mockService, baseURL)
 	ret := &services.ShortedLink{URL: ""}
-	mockService.EXPECT().CreateShortLink("http://test6.url").Return(ret, errors.New("random fail")).AnyTimes()
+	mockService.EXPECT().CreateShortLink(ctx, "http://test6.url").
+		Return(ret, errors.New("random fail")).
+		AnyTimes()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ret = &services.ShortedLink{URL: tt.shortID}
-			mockService.EXPECT().CreateShortLink(tt.sourceURL).Return(ret, nil).AnyTimes()
+			mockService.EXPECT().CreateShortLink(ctx, tt.sourceURL).
+				Return(ret, nil).
+				AnyTimes()
 
 			r := strings.NewReader(tt.sourceURL)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)

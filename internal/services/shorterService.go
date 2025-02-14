@@ -11,9 +11,9 @@ import (
 )
 
 type ShortLinkRepo interface {
-	CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error)
+	Add(ctx context.Context, link *data.ShortLinkData) (*data.ShortLinkData, error)
 	AddBatch(ctx context.Context, links []*data.ShortLinkData) ([]*data.ShortLinkData, error)
-	GetURL(shortID string) (*data.ShortLinkData, error)
+	Get(ctx context.Context, shortID string) (*data.ShortLinkData, error)
 }
 
 // Генерирует мок для ShortLinkRepo
@@ -31,13 +31,13 @@ func NewNaiveShorterService(repo ShortLinkRepo) *NaiveShorterService {
 
 const shortIDLength = 8
 
-func (service *NaiveShorterService) CreateShortLink(originalURL string) (*ShortedLink, error) {
+func (service *NaiveShorterService) CreateShortLink(ctx context.Context, originalURL string) (*ShortedLink, error) {
 	id, shortID, err := createNewIds()
 	if err != nil {
 		return nil, fmt.Errorf("failed create ids: %w", err)
 	}
 	newLink := &data.ShortLinkData{UUID: id.String(), ShortURL: shortID, OriginalURL: originalURL}
-	createdLink, err := service.shortLinkRepo.CreateShortLink(newLink)
+	createdLink, err := service.shortLinkRepo.Add(ctx, newLink)
 	if err != nil {
 		var duplErr *data.DuplicateShortLinkError
 		if errors.As(err, &duplErr) {
@@ -54,8 +54,8 @@ func (service *NaiveShorterService) CreateShortLink(originalURL string) (*Shorte
 	return res, nil
 }
 
-func (service *NaiveShorterService) GetURL(shortID string) (string, error) {
-	link, err := service.shortLinkRepo.GetURL(shortID)
+func (service *NaiveShorterService) GetURL(ctx context.Context, shortID string) (string, error) {
+	link, err := service.shortLinkRepo.Get(ctx, shortID)
 	if err != nil {
 		return "", fmt.Errorf("failed get url from repo: %w", err)
 	} else if link != nil {
@@ -64,7 +64,8 @@ func (service *NaiveShorterService) GetURL(shortID string) (string, error) {
 	return "", nil
 }
 
-func (service *NaiveShorterService) CreateShortLinkBatch(originalLinks []*OriginalLink) ([]*ShortedLink, error) {
+func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context, originalLinks []*OriginalLink) (
+	[]*ShortedLink, error) {
 	dataModels := make([]*data.ShortLinkData, 0, len(originalLinks))
 	createdModels := make([]*ShortedLink, 0, len(originalLinks))
 
@@ -93,7 +94,7 @@ func (service *NaiveShorterService) CreateShortLinkBatch(originalLinks []*Origin
 		createdModels = append(createdModels, cm)
 	}
 
-	_, err := service.shortLinkRepo.AddBatch(context.TODO(), dataModels)
+	_, err := service.shortLinkRepo.AddBatch(ctx, dataModels)
 	if err != nil {
 		return nil, fmt.Errorf("failed add batch in repo: %w", err)
 	}

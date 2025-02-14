@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -60,6 +61,7 @@ func TestBatchHandler_Handle(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockService := NewMockShorterService(ctrl)
@@ -74,7 +76,9 @@ func TestBatchHandler_Handle(t *testing.T) {
 					CorelationID: tt.originalURLs[i].CorrelationID})
 			}
 			links := convertToShortLink(tt.originalURLs)
-			mockService.EXPECT().CreateShortLinkBatch(links).Return(shortedLinks, nil).AnyTimes()
+			mockService.EXPECT().CreateShortLinkBatch(ctx, links).
+				Return(shortedLinks, nil).
+				AnyTimes()
 
 			var bufReq bytes.Buffer
 			err := json.NewEncoder(&bufReq).Encode(tt.originalURLs)

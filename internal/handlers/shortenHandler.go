@@ -63,7 +63,7 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 		return
 	}
 
-	shortLink, err := handler.service.CreateShortLink(request.URL)
+	shortLink, err := handler.service.CreateShortLink(req.Context(), request.URL)
 
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)

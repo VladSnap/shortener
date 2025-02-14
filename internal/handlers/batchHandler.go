@@ -73,7 +73,7 @@ func (handler *BatchHandler) Handle(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	shortedLinks, err := handler.service.CreateShortLinkBatch(links)
+	shortedLinks, err := handler.service.CreateShortLinkBatch(req.Context(), links)
 
 	if err != nil {
 		http.Error(res, fmt.Errorf("failed CreateShortLinkBatch: %w", err).Error(), http.StatusInternalServerError)

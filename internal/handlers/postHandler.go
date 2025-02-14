@@ -56,7 +56,7 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortLink, err := handler.service.CreateShortLink(fullURL)
+	shortLink, err := handler.service.CreateShortLink(req.Context(), fullURL)
 
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)

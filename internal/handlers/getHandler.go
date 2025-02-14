@@ -27,7 +27,7 @@ func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	url, err := handler.service.GetURL(shortID)
+	url, err := handler.service.GetURL(req.Context(), shortID)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return

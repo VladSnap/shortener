@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"testing"
 
 	"github.com/VladSnap/shortener/internal/data"
@@ -20,18 +21,17 @@ func TestNaiveShortenService_CreateShortLink(t *testing.T) {
 		},
 	}
 
-	// создаём контроллер
+	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	// создаём объект-заглушку
 	mockRepo := NewMockShortLinkRepo(ctrl)
 	service := NewNaiveShorterService(mockRepo)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			retLink := getNewShortLink("tttttttt", tt.sourceURL)
-			mockRepo.EXPECT().CreateShortLink(gomock.Any()).Return(retLink, nil)
-			result, err := service.CreateShortLink(tt.sourceURL)
+			mockRepo.EXPECT().Add(ctx, gomock.Any()).Return(retLink, nil)
+			result, err := service.CreateShortLink(context.Background(), tt.sourceURL)
 
 			assert.Nil(t, err)
 			assert.NotNil(t, result)
@@ -65,18 +65,17 @@ func TestNaiveShortenService_GetURL(t *testing.T) {
 		},
 	}
 
-	// создаём контроллер
+	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	// создаём объект-заглушку
 	mockRepo := NewMockShortLinkRepo(ctrl)
 	service := NewNaiveShorterService(mockRepo)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			retLink := getNewShortLink(tt.shortID, tt.want.fullURL)
-			mockRepo.EXPECT().GetURL(tt.shortID).Return(retLink, nil)
-			result, err := service.GetURL(tt.shortID)
+			mockRepo.EXPECT().Get(ctx, tt.shortID).Return(retLink, nil)
+			result, err := service.GetURL(context.Background(), tt.shortID)
 			assert.NoError(t, err, "no expect error get url")
 			assert.Equal(t, tt.want.fullURL, result)
 		})

@@ -5,6 +5,7 @@
 package handlers
 
 import (
+	context "context"
 	reflect "reflect"
 
 	services "github.com/VladSnap/shortener/internal/services"
@@ -35,46 +36,46 @@ func (m *MockShorterService) EXPECT() *MockShorterServiceMockRecorder {
 }
 
 // CreateShortLink mocks base method.
-func (m *MockShorterService) CreateShortLink(arg0 string) (*services.ShortedLink, error) {
+func (m *MockShorterService) CreateShortLink(arg0 context.Context, arg1 string) (*services.ShortedLink, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateShortLink", arg0)
+	ret := m.ctrl.Call(m, "CreateShortLink", arg0, arg1)
 	ret0, _ := ret[0].(*services.ShortedLink)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateShortLink indicates an expected call of CreateShortLink.
-func (mr *MockShorterServiceMockRecorder) CreateShortLink(arg0 interface{}) *gomock.Call {
+func (mr *MockShorterServiceMockRecorder) CreateShortLink(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateShortLink", reflect.TypeOf((*MockShorterService)(nil).CreateShortLink), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateShortLink", reflect.TypeOf((*MockShorterService)(nil).CreateShortLink), arg0, arg1)
 }
 
 // CreateShortLinkBatch mocks base method.
-func (m *MockShorterService) CreateShortLinkBatch(arg0 []*services.OriginalLink) ([]*services.ShortedLink, error) {
+func (m *MockShorterService) CreateShortLinkBatch(arg0 context.Context, arg1 []*services.OriginalLink) ([]*services.ShortedLink, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateShortLinkBatch", arg0)
+	ret := m.ctrl.Call(m, "CreateShortLinkBatch", arg0, arg1)
 	ret0, _ := ret[0].([]*services.ShortedLink)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateShortLinkBatch indicates an expected call of CreateShortLinkBatch.
-func (mr *MockShorterServiceMockRecorder) CreateShortLinkBatch(arg0 interface{}) *gomock.Call {
+func (mr *MockShorterServiceMockRecorder) CreateShortLinkBatch(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateShortLinkBatch", reflect.TypeOf((*MockShorterService)(nil).CreateShortLinkBatch), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateShortLinkBatch", reflect.TypeOf((*MockShorterService)(nil).CreateShortLinkBatch), arg0, arg1)
 }
 
 // GetURL mocks base method.
-func (m *MockShorterService) GetURL(arg0 string) (string, error) {
+func (m *MockShorterService) GetURL(arg0 context.Context, arg1 string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetURL", arg0)
+	ret := m.ctrl.Call(m, "GetURL", arg0, arg1)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetURL indicates an expected call of GetURL.
-func (mr *MockShorterServiceMockRecorder) GetURL(arg0 interface{}) *gomock.Call {
+func (mr *MockShorterServiceMockRecorder) GetURL(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetURL", reflect.TypeOf((*MockShorterService)(nil).GetURL), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetURL", reflect.TypeOf((*MockShorterService)(nil).GetURL), arg0, arg1)
 }

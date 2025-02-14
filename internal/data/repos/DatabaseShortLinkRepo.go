@@ -19,14 +19,14 @@ func NewDatabaseShortLinkRepo(database *data.DatabaseShortener) *DatabaseShortLi
 	return repo
 }
 
-func (repo *DatabaseShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error) {
+func (repo *DatabaseShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData) (*data.ShortLinkData, error) {
 	sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url) VALUES ($1, $2, $3) " +
 		"ON CONFLICT (orig_url) DO UPDATE " +
 		"SET orig_url = short_links.orig_url " +
 		"RETURNING short_links.short_url"
 
 	//nolint:execinquery // use ON CONFLICT and Return value
-	row := repo.database.QueryRowContext(context.Background(), sqlText, link.UUID, link.ShortURL, link.OriginalURL)
+	row := repo.database.QueryRowContext(ctx, sqlText, link.UUID, link.ShortURL, link.OriginalURL)
 	if row.Err() != nil {
 		return nil, fmt.Errorf("failed insert to public.short_links new row: %w", row.Err())
 	}
@@ -44,7 +44,7 @@ func (repo *DatabaseShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*d
 
 func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.ShortLinkData) (
 	[]*data.ShortLinkData, error) {
-	tx, err := repo.database.Begin()
+	tx, err := repo.database.BeginTx(ctx, nil)
 	isCommited := false
 	if err != nil {
 		return nil, fmt.Errorf("failed begin db transaction: %w", err)
@@ -86,11 +86,11 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	return links, nil
 }
 
-func (repo *DatabaseShortLinkRepo) GetURL(shortID string) (*data.ShortLinkData, error) {
+func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*data.ShortLinkData, error) {
 	sqlText := `SELECT uuid, short_url, orig_url
             FROM public.short_links
 			WHERE short_url = $1`
-	row := repo.database.QueryRowContext(context.Background(), sqlText, shortID)
+	row := repo.database.QueryRowContext(ctx, sqlText, shortID)
 
 	link := data.ShortLinkData{}
 	// порядок переменных должен соответствовать порядку колонок в запросе
