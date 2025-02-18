@@ -123,7 +123,7 @@ func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID st
 	for rows.Next() {
 		link := data.ShortLinkData{}
 		// порядок переменных должен соответствовать порядку колонок в запросе
-		err := rows.Scan(&link)
+		err := rows.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, &link.UserID)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("failed scan select from public.short_links: %w", err)
 		}
