@@ -89,14 +89,12 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 }
 
 func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*data.ShortLinkData, error) {
-	sqlText := `SELECT uuid, short_url, orig_url
-            FROM public.short_links
-			WHERE short_url = $1`
+	sqlText := `SELECT * FROM public.short_links WHERE short_url = $1`
 	row := repo.database.QueryRowContext(ctx, sqlText, shortID)
 
 	link := data.ShortLinkData{}
 	// порядок переменных должен соответствовать порядку колонок в запросе
-	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL)
+	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, &link.UserID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("failed select from public.short_links: %w", err)
 	}
