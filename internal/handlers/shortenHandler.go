@@ -71,7 +71,7 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 
 	result := ShortenResponse{Result: handler.baseURL + "/" + shortLink.URL}
 
-	res.Header().Add("Content-Type", "application/json")
+	res.Header().Add("Content-Type", HeaderApplicationJSON)
 	if shortLink.IsDuplicated {
 		res.WriteHeader(http.StatusConflict)
 	} else {

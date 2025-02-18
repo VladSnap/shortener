@@ -13,10 +13,10 @@ type ShortedLink struct {
 	IsDuplicated bool
 }
 
-func NewShortedLink(uuid string, corlId string, origURL string, url string, isDupl bool) *ShortedLink {
+func NewShortedLink(uuid string, corlID string, origURL string, url string, isDupl bool) *ShortedLink {
 	return &ShortedLink{
 		UUID:         uuid,
-		CorelationID: corlId,
+		CorelationID: corlID,
 		OriginalURL:  origURL,
 		URL:          url,
 		IsDuplicated: isDupl,
