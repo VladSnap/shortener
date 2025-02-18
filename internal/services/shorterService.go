@@ -93,6 +93,22 @@ func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context,
 	return createdModels, nil
 }
 
+func (service *NaiveShorterService) GetAllByUserID(ctx context.Context, userID string) (
+	[]*ShortedLink, error) {
+	links, err := service.shortLinkRepo.GetAllByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed GetAllByUserId: %w", err)
+	}
+
+	shortedLinks := make([]*ShortedLink, 0, len(links))
+	for _, sl := range links {
+		shortedLink := NewShortedLink(sl.UUID, "", sl.OriginalURL, sl.ShortURL, false)
+		shortedLinks = append(shortedLinks, shortedLink)
+	}
+
+	return shortedLinks, nil
+}
+
 func createNewIds() (id uuid.UUID, shortID string, err error) {
 	id, err = uuid.NewRandom()
 	if err != nil {

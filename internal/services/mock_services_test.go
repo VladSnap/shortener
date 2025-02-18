@@ -79,3 +79,18 @@ func (mr *MockShortLinkRepoMockRecorder) Get(arg0, arg1 interface{}) *gomock.Cal
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockShortLinkRepo)(nil).Get), arg0, arg1)
 }
+
+// GetAllByUserID mocks base method.
+func (m *MockShortLinkRepo) GetAllByUserID(arg0 context.Context, arg1 string) ([]*data.ShortLinkData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllByUserID", arg0, arg1)
+	ret0, _ := ret[0].([]*data.ShortLinkData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllByUserID indicates an expected call of GetAllByUserID.
+func (mr *MockShortLinkRepoMockRecorder) GetAllByUserID(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllByUserID", reflect.TypeOf((*MockShortLinkRepo)(nil).GetAllByUserID), arg0, arg1)
+}

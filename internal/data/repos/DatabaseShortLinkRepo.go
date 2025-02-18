@@ -103,3 +103,35 @@ func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*da
 
 	return &link, nil
 }
+
+func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID string) (
+	[]*data.ShortLinkData, error) {
+	sqlText := `SELECT * FROM public.short_links WHERE user_id = $1`
+	rows, err := repo.database.QueryContext(ctx, sqlText, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed select from public.short_links: %w", err)
+	}
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Zap.Errorf("failed rows Close: %w", err)
+		}
+	}()
+
+	const startSizeLinks int = 10
+	links := make([]*data.ShortLinkData, 0, startSizeLinks)
+	for rows.Next() {
+		link := data.ShortLinkData{}
+		// порядок переменных должен соответствовать порядку колонок в запросе
+		err := rows.Scan(&link)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("failed scan select from public.short_links: %w", err)
+		}
+		links = append(links, &link)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Zap.Errorf("last error encountered by Rows.Scan: %w", err)
+	}
+	return links, nil
+}

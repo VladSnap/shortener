@@ -32,3 +32,8 @@ func (repo *InMemoryShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 func (repo *InMemoryShortLinkRepo) Get(ctx context.Context, shortID string) (*data.ShortLinkData, error) {
 	return repo.links[shortID], nil
 }
+
+func (repo *InMemoryShortLinkRepo) GetAllByUserID(ctx context.Context, userID string) (
+	[]*data.ShortLinkData, error) {
+	return make([]*data.ShortLinkData, 0), nil
+}
