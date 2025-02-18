@@ -35,9 +35,9 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 		return
 	}
 
-	ct := req.Header.Get("content-type")
+	ct := req.Header.Get(HeaderContentType)
 
-	if !strings.Contains(ct, HeaderApplicationJSON) && !strings.Contains(ct, HeaderApplicationXgzip) {
+	if !strings.Contains(ct, HeaderApplicationJSONValue) && !strings.Contains(ct, HeaderApplicationXgzipValue) {
 		http.Error(res, "Incorrect content-type:"+ct, http.StatusBadRequest)
 		return
 	}
@@ -71,7 +71,7 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 
 	result := ShortenResponse{Result: handler.baseURL + "/" + shortLink.URL}
 
-	res.Header().Add("Content-Type", HeaderApplicationJSON)
+	res.Header().Add(HeaderContentType, HeaderApplicationJSONValue)
 	if shortLink.IsDuplicated {
 		res.WriteHeader(http.StatusConflict)
 	} else {

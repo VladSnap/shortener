@@ -143,7 +143,7 @@ func TestGetHandler(t *testing.T) {
 			err = res.Body.Close()
 			assert.NoError(t, err, "no error for close response body")
 
-			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
+			assert.Equal(t, tt.want.contentType, res.Header.Get(HeaderContentType))
 			assert.Equal(t, tt.url, res.Header.Get("Location"))
 			assert.NotEmpty(t, string(resBody))
 		})

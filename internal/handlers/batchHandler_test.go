@@ -40,7 +40,7 @@ func TestBatchHandler_Handle(t *testing.T) {
 				{CorrelationID: "crid2", OriginalURL: "http://test2.url/"}},
 			want: want{
 				code:        201,
-				contentType: HeaderApplicationJSON,
+				contentType: HeaderApplicationJSONValue,
 				shortedURLs: []ShortenRowResponse{
 					{CorrelationID: "crid1", ShortURL: baseURL + "/hbFgvtUO"},
 					{CorrelationID: "crid2", ShortURL: baseURL + "/fVdpTFBo"},
@@ -85,14 +85,14 @@ func TestBatchHandler_Handle(t *testing.T) {
 			err := json.NewEncoder(&bufReq).Encode(tt.originalURLs)
 			assert.NoError(t, err, "no error for encode json request")
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, &bufReq)
-			postRequest.Header.Add("Content-Type", HeaderApplicationJSON)
+			postRequest.Header.Add(HeaderContentType, HeaderApplicationJSONValue)
 			w := httptest.NewRecorder()
 			batchHandler.Handle(w, postRequest)
 			res := w.Result()
 			require.Equal(t, tt.want.code, res.StatusCode, "Incorrect status code")
-			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"), "Incorrect header content-type")
+			assert.Equal(t, tt.want.contentType, res.Header.Get(HeaderContentType), "Incorrect header content-type")
 
-			if res.Header.Get("Content-Type") == HeaderApplicationJSON {
+			if res.Header.Get(HeaderContentType) == HeaderApplicationJSONValue {
 				var shortedUrls []ShortenRowResponse
 				err := json.NewDecoder(res.Body).Decode(&shortedUrls)
 				assert.NoError(t, err, "no error for decode json response")

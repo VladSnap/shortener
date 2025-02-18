@@ -142,7 +142,7 @@ func TestPostHandler(t *testing.T) {
 
 			r := strings.NewReader(tt.sourceURL)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)
-			postRequest.Header.Add("Content-Type", "text/plain; charset=utf-8")
+			postRequest.Header.Add(HeaderContentType, "text/plain; charset=utf-8")
 			w := httptest.NewRecorder()
 			postHandler.Handle(w, postRequest)
 			res := w.Result()
@@ -153,7 +153,7 @@ func TestPostHandler(t *testing.T) {
 			assert.NoError(t, err, "no error for close response body")
 
 			shortURL := string(resBody)
-			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"), "Incorrect header content-type")
+			assert.Equal(t, tt.want.contentType, res.Header.Get(HeaderContentType), "Incorrect header content-type")
 			assert.Equal(t, tt.want.responseBody, shortURL, "Incorrect response short url")
 		})
 	}

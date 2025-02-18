@@ -48,7 +48,7 @@ func (handler *UrlsHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		responseRows = append(responseRows, rr)
 	}
 
-	res.Header().Add("Content-Type", HeaderApplicationJSON)
+	res.Header().Add(HeaderContentType, HeaderApplicationJSONValue)
 	res.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(res).Encode(responseRows)
 

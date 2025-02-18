@@ -32,8 +32,8 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ct := req.Header.Get("content-type")
-	if !strings.Contains(ct, "text/plain") && !strings.Contains(ct, HeaderApplicationXgzip) {
+	ct := req.Header.Get(HeaderContentType)
+	if !strings.Contains(ct, "text/plain") && !strings.Contains(ct, HeaderApplicationXgzipValue) {
 		http.Error(res, "Incorrect content-type:"+ct, http.StatusBadRequest)
 		return
 	}
@@ -60,7 +60,7 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	res.Header().Add("Content-Type", "text/plain")
+	res.Header().Add(HeaderContentType, "text/plain")
 	if shortLink.IsDuplicated {
 		res.WriteHeader(http.StatusConflict)
 	} else {

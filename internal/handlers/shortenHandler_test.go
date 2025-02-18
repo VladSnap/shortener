@@ -39,7 +39,7 @@ func TestShortenHandler(t *testing.T) {
 			shortID:     "fVdpTFBo",
 			want: want{
 				code:         201,
-				contentType:  HeaderApplicationJSON,
+				contentType:  HeaderApplicationJSONValue,
 				responseBody: fmt.Sprintf("{\"result\":\"%v/fVdpTFBo\"}\n", baseURL),
 			},
 		}, {
@@ -115,7 +115,7 @@ func TestShortenHandler(t *testing.T) {
 
 			r := bytes.NewReader(rqBytes)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)
-			postRequest.Header.Add("Content-Type", HeaderApplicationJSON)
+			postRequest.Header.Add(HeaderContentType, HeaderApplicationJSONValue)
 			w := httptest.NewRecorder()
 			handler.Handle(w, postRequest)
 			res := w.Result()
@@ -127,7 +127,7 @@ func TestShortenHandler(t *testing.T) {
 			assert.NoError(t, err, "no error for close response body")
 			resBodyStr := string(resBody)
 
-			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"), "Incorrect header content-type")
+			assert.Equal(t, tt.want.contentType, res.Header.Get(HeaderContentType), "Incorrect header content-type")
 			assert.Equal(t, tt.want.responseBody, resBodyStr, "Incorrect response body")
 		})
 	}
