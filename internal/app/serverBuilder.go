@@ -42,7 +42,9 @@ func CreateServer(opts *config.Options, resMng *services.ResourceManager) (Short
 	shortenHandler := handlers.NewShortenHandler(shorterService, opts.BaseURL)
 	pingHandler := handlers.NewGetPingHandler(opts)
 	batchHandler := handlers.NewBatchHandler(shorterService, opts.BaseURL)
+	urlsHandler := handlers.NewUrlsHandler(shorterService, opts.BaseURL)
 
-	server := NewChiShortenerServer(opts, postHandler, getHandler, shortenHandler, pingHandler, batchHandler)
+	server := NewChiShortenerServer(opts, postHandler, getHandler, shortenHandler,
+		pingHandler, batchHandler, urlsHandler)
 	return server, nil
 }
