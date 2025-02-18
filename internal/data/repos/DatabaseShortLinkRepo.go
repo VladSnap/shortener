@@ -28,7 +28,7 @@ func (repo *DatabaseShortLinkRepo) Add(ctx context.Context, link *data.ShortLink
 		"RETURNING short_links.short_url"
 
 	//nolint:execinquery // use ON CONFLICT and Return value
-	row := repo.database.QueryRowContext(ctx, sqlText, link.UUID, link.ShortURL, link.OriginalURL, link.UserID)
+	row := repo.database.QueryRowContext(ctx, sqlText, link.UUID, link.ShortURL, link.OriginalURL, toNullString(link.UserID))
 	if row.Err() != nil {
 		return nil, fmt.Errorf("failed insert to public.short_links new row: %w", row.Err())
 	}
@@ -74,7 +74,7 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	}()
 
 	for _, link := range links {
-		_, err := stmt.ExecContext(ctx, link.UUID, link.ShortURL, link.OriginalURL, link.UserID)
+		_, err := stmt.ExecContext(ctx, link.UUID, link.ShortURL, link.OriginalURL, toNullString(link.UserID))
 		if err != nil {
 			return nil, fmt.Errorf("failed exec insert: %w", err)
 		}
@@ -93,10 +93,13 @@ func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*da
 	row := repo.database.QueryRowContext(ctx, sqlText, shortID)
 
 	link := data.ShortLinkData{}
-	// порядок переменных должен соответствовать порядку колонок в запросе
-	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, &link.UserID)
+	var userID sql.NullString
+	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, userID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("failed select from public.short_links: %w", err)
+	}
+	if userID.Valid {
+		link.UserID = userID.String
 	}
 
 	return &link, nil
@@ -105,7 +108,7 @@ func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*da
 func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID string) (
 	[]*data.ShortLinkData, error) {
 	sqlText := `SELECT * FROM public.short_links WHERE user_id = $1`
-	rows, err := repo.database.QueryContext(ctx, sqlText, userID)
+	rows, err := repo.database.QueryContext(ctx, sqlText, toNullString(userID))
 	if err != nil {
 		return nil, fmt.Errorf("failed select from public.short_links: %w", err)
 	}
@@ -132,4 +135,11 @@ func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID st
 		log.Zap.Errorf("last error encountered by Rows.Scan: %w", err)
 	}
 	return links, nil
+}
+
+func toNullString(input string) sql.NullString {
+	if input == "" {
+		return sql.NullString{String: "", Valid: false}
+	}
+	return sql.NullString{String: input, Valid: true}
 }
