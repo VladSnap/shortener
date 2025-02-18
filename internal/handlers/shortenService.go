@@ -10,8 +10,8 @@ import (
 //go:generate mockgen -destination=mock_handlers_test.go -package handlers github.com/VladSnap/shortener/internal/handlers ShorterService
 
 type ShorterService interface {
-	CreateShortLink(ctx context.Context, originalURL string) (*services.ShortedLink, error)
-	CreateShortLinkBatch(ctx context.Context, originalLinks []*services.OriginalLink) (
+	CreateShortLink(ctx context.Context, originalURL string, userID string) (*services.ShortedLink, error)
+	CreateShortLinkBatch(ctx context.Context, originalLinks []*services.OriginalLink, userID string) (
 		[]*services.ShortedLink, error)
 	GetURL(ctx context.Context, shortID string) (string, error)
 }

@@ -66,6 +66,7 @@ func TestBatchHandler_Handle(t *testing.T) {
 	defer ctrl.Finish()
 	mockService := NewMockShorterService(ctrl)
 	batchHandler := NewBatchHandler(mockService, baseURL)
+	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -76,7 +77,7 @@ func TestBatchHandler_Handle(t *testing.T) {
 					CorelationID: tt.originalURLs[i].CorrelationID})
 			}
 			links := convertToShortLink(tt.originalURLs)
-			mockService.EXPECT().CreateShortLinkBatch(ctx, links).
+			mockService.EXPECT().CreateShortLinkBatch(ctx, links, userID).
 				Return(shortedLinks, nil).
 				AnyTimes()
 

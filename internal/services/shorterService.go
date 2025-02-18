@@ -14,6 +14,7 @@ type ShortLinkRepo interface {
 	Add(ctx context.Context, link *data.ShortLinkData) (*data.ShortLinkData, error)
 	AddBatch(ctx context.Context, links []*data.ShortLinkData) ([]*data.ShortLinkData, error)
 	Get(ctx context.Context, shortID string) (*data.ShortLinkData, error)
+	GetAllByUserID(ctx context.Context, userID string) ([]*data.ShortLinkData, error)
 }
 
 // Генерирует мок для ShortLinkRepo
@@ -31,12 +32,13 @@ func NewNaiveShorterService(repo ShortLinkRepo) *NaiveShorterService {
 
 const shortIDLength = 8
 
-func (service *NaiveShorterService) CreateShortLink(ctx context.Context, originalURL string) (*ShortedLink, error) {
+func (service *NaiveShorterService) CreateShortLink(ctx context.Context,
+	originalURL string, userID string) (*ShortedLink, error) {
 	id, shortID, err := createNewIds()
 	if err != nil {
 		return nil, fmt.Errorf("failed create ids: %w", err)
 	}
-	newLink := data.NewShortLinkData(id.String(), shortID, originalURL)
+	newLink := data.NewShortLinkData(id.String(), shortID, originalURL, userID)
 	createdLink, err := service.shortLinkRepo.Add(ctx, newLink)
 	if err != nil {
 		var duplErr *data.DuplicateShortLinkError
@@ -62,8 +64,8 @@ func (service *NaiveShorterService) GetURL(ctx context.Context, shortID string) 
 	return "", nil
 }
 
-func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context, originalLinks []*OriginalLink) (
-	[]*ShortedLink, error) {
+func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context,
+	originalLinks []*OriginalLink, userID string) ([]*ShortedLink, error) {
 	dataModels := make([]*data.ShortLinkData, 0, len(originalLinks))
 	createdModels := make([]*ShortedLink, 0, len(originalLinks))
 
@@ -76,7 +78,7 @@ func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context, or
 		if err != nil {
 			return nil, fmt.Errorf("failed create ids: %w", err)
 		}
-		dm := data.NewShortLinkData(id.String(), shortID, ol.URL)
+		dm := data.NewShortLinkData(id.String(), shortID, ol.URL, userID)
 		dataModels = append(dataModels, dm)
 		cm := NewShortedLink(id.String(), ol.CorelationID, ol.URL, shortID, false)
 		createdModels = append(createdModels, cm)

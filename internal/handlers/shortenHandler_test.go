@@ -95,13 +95,14 @@ func TestShortenHandler(t *testing.T) {
 	mockService := NewMockShorterService(ctrl)
 	handler := NewShortenHandler(mockService, baseURL)
 	ret := &services.ShortedLink{URL: ""}
-	mockService.EXPECT().CreateShortLink(ctx, "http://test6.url").
+	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
+	mockService.EXPECT().CreateShortLink(ctx, "http://test6.url", userID).
 		Return(ret, errors.New("random fail")).AnyTimes()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ret = &services.ShortedLink{URL: tt.shortID}
-			mockService.EXPECT().CreateShortLink(ctx, tt.sourceURL).
+			mockService.EXPECT().CreateShortLink(ctx, tt.sourceURL, userID).
 				Return(ret, nil).AnyTimes()
 
 			requestData := ShortenRequest{

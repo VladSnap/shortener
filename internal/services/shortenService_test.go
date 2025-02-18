@@ -26,12 +26,13 @@ func TestNaiveShortenService_CreateShortLink(t *testing.T) {
 	defer ctrl.Finish()
 	mockRepo := NewMockShortLinkRepo(ctrl)
 	service := NewNaiveShorterService(mockRepo)
+	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			retLink := getNewShortLink("tttttttt", tt.sourceURL)
 			mockRepo.EXPECT().Add(ctx, gomock.Any()).Return(retLink, nil)
-			result, err := service.CreateShortLink(context.Background(), tt.sourceURL)
+			result, err := service.CreateShortLink(context.Background(), tt.sourceURL, userID)
 
 			assert.Nil(t, err)
 			assert.NotNil(t, result)

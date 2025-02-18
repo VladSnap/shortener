@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/VladSnap/shortener/internal/data"
@@ -19,14 +20,15 @@ func NewDatabaseShortLinkRepo(database *data.DatabaseShortener) *DatabaseShortLi
 	return repo
 }
 
-func (repo *DatabaseShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData) (*data.ShortLinkData, error) {
-	sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url) VALUES ($1, $2, $3) " +
+func (repo *DatabaseShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData) (
+	*data.ShortLinkData, error) {
+	sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url, user_id) VALUES ($1, $2, $3, $4) " +
 		"ON CONFLICT (orig_url) DO UPDATE " +
 		"SET orig_url = short_links.orig_url " +
 		"RETURNING short_links.short_url"
 
 	//nolint:execinquery // use ON CONFLICT and Return value
-	row := repo.database.QueryRowContext(ctx, sqlText, link.UUID, link.ShortURL, link.OriginalURL)
+	row := repo.database.QueryRowContext(ctx, sqlText, link.UUID, link.ShortURL, link.OriginalURL, link.UserID)
 	if row.Err() != nil {
 		return nil, fmt.Errorf("failed insert to public.short_links new row: %w", row.Err())
 	}
@@ -59,8 +61,8 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	}()
 
 	stmt, err := tx.PrepareContext(ctx,
-		"INSERT INTO public.short_links (uuid, short_url, orig_url)"+
-			" VALUES($1, $2, $3)")
+		"INSERT INTO public.short_links (uuid, short_url, orig_url, user_id)"+
+			" VALUES($1, $2, $3, $4)")
 	if err != nil {
 		return nil, fmt.Errorf("failed prepare insert: %w", err)
 	}
@@ -72,7 +74,7 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	}()
 
 	for _, link := range links {
-		_, err := stmt.ExecContext(ctx, link.UUID, link.ShortURL, link.OriginalURL)
+		_, err := stmt.ExecContext(ctx, link.UUID, link.ShortURL, link.OriginalURL, link.UserID)
 		if err != nil {
 			return nil, fmt.Errorf("failed exec insert: %w", err)
 		}
@@ -95,7 +97,7 @@ func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*da
 	link := data.ShortLinkData{}
 	// порядок переменных должен соответствовать порядку колонок в запросе
 	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("failed select from public.short_links: %w", err)
 	}
 

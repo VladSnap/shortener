@@ -52,7 +52,8 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortLink, err := handler.service.CreateShortLink(req.Context(), fullURL)
+	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
+	shortLink, err := handler.service.CreateShortLink(req.Context(), fullURL, userID)
 
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
