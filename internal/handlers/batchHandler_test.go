@@ -56,7 +56,7 @@ func TestBatchHandler_Handle(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "originalURL verify error\n",
+				responseBody: "OriginalURL verify error\n",
 			},
 		},
 	}
