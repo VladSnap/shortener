@@ -81,11 +81,16 @@ func (server *ChiShortenerServer) initServer() *chi.Mux {
 	r.Use(middlewares.GzipMiddleware)
 	r.Use(middleware.Recoverer)
 
-	r.Post("/", server.postHandler.Handle)
 	r.Get("/{id}", server.getHandler.Handle)
-	r.Post("/api/shorten", server.shortenHandler.Handle)
 	r.Get("/ping", server.pingHandler.Handle)
-	r.Post("/api/shorten/batch", server.batchHandler.Handle)
-	r.Get("/api/user/urls", server.urlsHandler.Handle)
+
+	// Роутинги с аутентификацией.
+	r.Group(func(r chi.Router) {
+		r.Use(middlewares.AuthMiddleware)
+		r.Post("/", server.postHandler.Handle)
+		r.Post("/api/shorten", server.shortenHandler.Handle)
+		r.Post("/api/shorten/batch", server.batchHandler.Handle)
+		r.Get("/api/user/urls", server.urlsHandler.Handle)
+	})
 	return r
 }
