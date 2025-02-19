@@ -94,7 +94,7 @@ func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*da
 
 	link := data.ShortLinkData{}
 	var userID sql.NullString
-	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, userID)
+	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, &userID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("failed select from public.short_links: %w", err)
 	}
