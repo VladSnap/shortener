@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/services"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -61,12 +62,12 @@ func TestBatchHandler_Handle(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockService := NewMockShorterService(ctrl)
 	batchHandler := NewBatchHandler(mockService, baseURL)
 	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
+	ctx := context.WithValue(context.Background(), constants.UserIDContextKey, userID)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -86,6 +87,7 @@ func TestBatchHandler_Handle(t *testing.T) {
 			assert.NoError(t, err, "no error for encode json request")
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, &bufReq)
 			postRequest.Header.Add(HeaderContentType, HeaderApplicationJSONValue)
+			postRequest = postRequest.WithContext(ctx)
 			w := httptest.NewRecorder()
 			batchHandler.Handle(w, postRequest)
 			res := w.Result()

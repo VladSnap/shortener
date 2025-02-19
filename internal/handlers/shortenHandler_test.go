@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/services"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -89,13 +90,13 @@ func TestShortenHandler(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockService := NewMockShorterService(ctrl)
 	handler := NewShortenHandler(mockService, baseURL)
 	ret := &services.ShortedLink{URL: ""}
 	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
+	ctx := context.WithValue(context.Background(), constants.UserIDContextKey, userID)
 	mockService.EXPECT().CreateShortLink(ctx, "http://test6.url", userID).
 		Return(ret, errors.New("random fail")).AnyTimes()
 
@@ -116,6 +117,7 @@ func TestShortenHandler(t *testing.T) {
 			r := bytes.NewReader(rqBytes)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)
 			postRequest.Header.Add(HeaderContentType, HeaderApplicationJSONValue)
+			postRequest = postRequest.WithContext(ctx)
 			w := httptest.NewRecorder()
 			handler.Handle(w, postRequest)
 			res := w.Result()
