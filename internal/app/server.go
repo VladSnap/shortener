@@ -31,6 +31,7 @@ type ChiShortenerServer struct {
 	shortenHandler Handler
 	pingHandler    Handler
 	batchHandler   Handler
+	urlsHandler    Handler
 }
 
 func NewChiShortenerServer(opts *config.Options,
@@ -38,7 +39,8 @@ func NewChiShortenerServer(opts *config.Options,
 	getHandler Handler,
 	shortenHandler Handler,
 	pingHandler Handler,
-	batchHandler Handler) *ChiShortenerServer {
+	batchHandler Handler,
+	urlsHandler Handler) *ChiShortenerServer {
 	server := new(ChiShortenerServer)
 	server.opts = opts
 	server.postHandler = postHandler
@@ -46,6 +48,7 @@ func NewChiShortenerServer(opts *config.Options,
 	server.shortenHandler = shortenHandler
 	server.pingHandler = pingHandler
 	server.batchHandler = batchHandler
+	server.urlsHandler = urlsHandler
 	return server
 }
 
@@ -78,11 +81,16 @@ func (server *ChiShortenerServer) initServer() *chi.Mux {
 	r.Use(middlewares.GzipMiddleware)
 	r.Use(middleware.Recoverer)
 
-	r.Post("/", server.postHandler.Handle)
 	r.Get("/{id}", server.getHandler.Handle)
-	r.Post("/api/shorten", server.shortenHandler.Handle)
 	r.Get("/ping", server.pingHandler.Handle)
-	r.Post("/api/shorten/batch", server.batchHandler.Handle)
 
+	// Роутинги с аутентификацией.
+	r.Group(func(r chi.Router) {
+		r.Use(middlewares.AuthMiddleware)
+		r.Post("/", server.postHandler.Handle)
+		r.Post("/api/shorten", server.shortenHandler.Handle)
+		r.Post("/api/shorten/batch", server.batchHandler.Handle)
+		r.Get("/api/user/urls", server.urlsHandler.Handle)
+	})
 	return r
 }

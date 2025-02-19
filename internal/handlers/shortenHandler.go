@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/log"
-	urlverifier "github.com/davidmytton/url-verifier"
+	"github.com/VladSnap/shortener/internal/validation"
 )
 
 type ShortenRequest struct {
@@ -35,9 +36,9 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 		return
 	}
 
-	ct := req.Header.Get("content-type")
+	ct := req.Header.Get(HeaderContentType)
 
-	if !strings.Contains(ct, HeaderApplicationJSON) && !strings.Contains(ct, HeaderApplicationXgzip) {
+	if !strings.Contains(ct, HeaderApplicationJSONValue) && !strings.Contains(ct, HeaderApplicationXgzipValue) {
 		http.Error(res, "Incorrect content-type:"+ct, http.StatusBadRequest)
 		return
 	}
@@ -56,14 +57,16 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 
 	request.URL = strings.TrimSuffix(request.URL, "\r")
 	request.URL = strings.TrimSuffix(request.URL, "\n")
-	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(request.URL)
-
-	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
-		http.Error(res, "Full URL verify error", http.StatusBadRequest)
+	if err := validation.ValidateURL(request.URL, "URL"); err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	shortLink, err := handler.service.CreateShortLink(request.URL)
+	userID := ""
+	if value, ok := req.Context().Value(constants.UserIDContextKey).(string); ok {
+		userID = value
+	}
+	shortLink, err := handler.service.CreateShortLink(req.Context(), request.URL, userID)
 
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -72,7 +75,7 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 
 	result := ShortenResponse{Result: handler.baseURL + "/" + shortLink.URL}
 
-	res.Header().Add("Content-Type", "application/json")
+	res.Header().Add(HeaderContentType, HeaderApplicationJSONValue)
 	if shortLink.IsDuplicated {
 		res.WriteHeader(http.StatusConflict)
 	} else {

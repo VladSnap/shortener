@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -118,6 +119,7 @@ func TestGetHandler(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockService := NewMockShorterService(ctrl)
@@ -125,7 +127,9 @@ func TestGetHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService.EXPECT().GetURL(tt.id).Return(tt.url, nil).AnyTimes()
+			mockService.EXPECT().GetURL(ctx, tt.id).
+				Return(tt.url, nil).
+				AnyTimes()
 
 			request := httptest.NewRequest(tt.httpMethod, tt.requestPath, http.NoBody)
 			request.SetPathValue("id", tt.id)
@@ -139,7 +143,7 @@ func TestGetHandler(t *testing.T) {
 			err = res.Body.Close()
 			assert.NoError(t, err, "no error for close response body")
 
-			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
+			assert.Equal(t, tt.want.contentType, res.Header.Get(HeaderContentType))
 			assert.Equal(t, tt.url, res.Header.Get("Location"))
 			assert.NotEmpty(t, string(resBody))
 		})
