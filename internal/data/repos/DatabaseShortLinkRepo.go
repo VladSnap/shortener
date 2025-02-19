@@ -28,7 +28,8 @@ func (repo *DatabaseShortLinkRepo) Add(ctx context.Context, link *data.ShortLink
 		"RETURNING short_links.short_url"
 
 	//nolint:execinquery // use ON CONFLICT and Return value
-	row := repo.database.QueryRowContext(ctx, sqlText, link.UUID, link.ShortURL, link.OriginalURL, toNullString(link.UserID))
+	row := repo.database.QueryRowContext(ctx, sqlText, link.UUID, link.ShortURL,
+		link.OriginalURL, toNullString(link.UserID))
 	if row.Err() != nil {
 		return nil, fmt.Errorf("failed insert to public.short_links new row: %w", row.Err())
 	}
