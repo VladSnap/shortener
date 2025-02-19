@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/log"
 )
 
@@ -30,7 +31,10 @@ func (handler *UrlsHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
+	userID := ""
+	if value, ok := req.Context().Value(constants.UserIDContextKey).(string); ok {
+		userID = value
+	}
 	shortedLinks, err := handler.service.GetAllByUserID(req.Context(), userID)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)

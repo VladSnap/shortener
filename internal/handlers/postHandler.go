@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/validation"
 )
@@ -52,7 +53,10 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
+	userID := ""
+	if value, ok := req.Context().Value(constants.UserIDContextKey).(string); ok {
+		userID = value
+	}
 	shortLink, err := handler.service.CreateShortLink(req.Context(), fullURL, userID)
 
 	if err != nil {
