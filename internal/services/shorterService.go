@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/helpers"
 	"github.com/google/uuid"
@@ -30,8 +31,6 @@ func NewNaiveShorterService(repo ShortLinkRepo) *NaiveShorterService {
 	service.shortLinkRepo = repo
 	return service
 }
-
-const shortIDLength = 8
 
 func (service *NaiveShorterService) CreateShortLink(ctx context.Context,
 	originalURL string, userID string) (*ShortedLink, error) {
@@ -125,7 +124,7 @@ func createNewIds() (id uuid.UUID, shortID string, err error) {
 		err = fmt.Errorf("failed create random: %w", err)
 		return
 	}
-	shortID, err = helpers.RandStringRunes(shortIDLength)
+	shortID, err = helpers.RandStringRunes(constants.ShortIDLength)
 	if err != nil {
 		err = fmt.Errorf("failed create short url: %w", err)
 		return

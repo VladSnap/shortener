@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -37,7 +38,7 @@ func TestNaiveShortenService_CreateShortLink(t *testing.T) {
 			assert.Nil(t, err)
 			assert.NotNil(t, result)
 			assert.NotEmpty(t, result.URL)
-			assert.Len(t, result.URL, shortIDLength)
+			assert.Len(t, result.URL, constants.ShortIDLength)
 		})
 	}
 }
