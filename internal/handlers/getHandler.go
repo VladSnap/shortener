@@ -39,6 +39,11 @@ func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	res.Header().Set("Location", url)
-	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
+	if url.IsDeleted {
+		http.Error(res, "Url has been removed", http.StatusGone)
+		return
+	}
+
+	res.Header().Set("Location", url.OriginalURL)
+	http.Redirect(res, req, url.OriginalURL, http.StatusTemporaryRedirect)
 }
