@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -56,7 +57,7 @@ func (handler *DeleteHandler) Handle(res http.ResponseWriter, req *http.Request)
 	}
 
 	go func() {
-		err := handler.service.DeleteBatch(req.Context(), shortURLs, userID)
+		err := handler.service.DeleteBatch(context.WithoutCancel(req.Context()), shortURLs, userID)
 		if err != nil {
 			log.Zap.Errorf("failed DeleteBatch: %w", err)
 			return
