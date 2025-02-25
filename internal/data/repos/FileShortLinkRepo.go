@@ -68,6 +68,19 @@ func (repo *FileShortLinkRepo) Get(ctx context.Context, shortID string) (*data.S
 	return link, nil
 }
 
+func (repo *FileShortLinkRepo) GetAllByUserID(ctx context.Context, userID string) (
+	[]*data.ShortLinkData, error) {
+	var links []*data.ShortLinkData
+
+	for _, l := range repo.links {
+		if l.UserID == userID {
+			links = append(links, l)
+		}
+	}
+
+	return links, nil
+}
+
 func (repo *FileShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []string, userID string) error {
 	// Сначала обновляем записи в мемори кэше.
 	for _, sid := range shortIDs {
@@ -191,9 +204,4 @@ func (repo *FileShortLinkRepo) loadLinks() (map[string]*data.ShortLinkData, erro
 		linkMap[link.ShortURL] = link
 	}
 	return linkMap, nil
-}
-
-func (repo *FileShortLinkRepo) GetAllByUserID(ctx context.Context, userID string) (
-	[]*data.ShortLinkData, error) {
-	return make([]*data.ShortLinkData, 0), nil
 }
