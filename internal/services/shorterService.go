@@ -61,7 +61,7 @@ func (service *NaiveShorterService) GetURL(ctx context.Context, shortID string) 
 	} else if link != nil {
 		return NewShortedLink(link.UUID, "", link.OriginalURL, link.ShortURL, false, link.IsDeleted), nil
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil // expected return nil
 }
 
 func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context,
