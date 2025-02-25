@@ -22,14 +22,15 @@ func NewDatabaseShortLinkRepo(database *data.DatabaseShortener) *DatabaseShortLi
 
 func (repo *DatabaseShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData) (
 	*data.ShortLinkData, error) {
-	sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url, user_id) VALUES ($1, $2, $3, $4) " +
+	sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url, user_id, is_deleted)" +
+		"VALUES ($1, $2, $3, $4, $5) " +
 		"ON CONFLICT (orig_url) DO UPDATE " +
 		"SET orig_url = short_links.orig_url " +
 		"RETURNING short_links.short_url"
 
 	//nolint:execinquery // use ON CONFLICT and Return value
 	row := repo.database.QueryRowContext(ctx, sqlText, link.UUID, link.ShortURL,
-		link.OriginalURL, toNullString(link.UserID))
+		link.OriginalURL, toNullString(link.UserID), link.IsDeleted)
 	if row.Err() != nil {
 		return nil, fmt.Errorf("failed insert to public.short_links new row: %w", row.Err())
 	}
@@ -62,8 +63,8 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	}()
 
 	stmt, err := tx.PrepareContext(ctx,
-		"INSERT INTO public.short_links (uuid, short_url, orig_url, user_id)"+
-			" VALUES($1, $2, $3, $4)")
+		"INSERT INTO public.short_links (uuid, short_url, orig_url, user_id, is_deleted)"+
+			" VALUES($1, $2, $3, $4, $5)")
 	if err != nil {
 		return nil, fmt.Errorf("failed prepare insert: %w", err)
 	}
@@ -75,7 +76,8 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	}()
 
 	for _, link := range links {
-		_, err := stmt.ExecContext(ctx, link.UUID, link.ShortURL, link.OriginalURL, toNullString(link.UserID))
+		_, err := stmt.ExecContext(ctx, link.UUID, link.ShortURL, link.OriginalURL,
+			toNullString(link.UserID), link.IsDeleted)
 		if err != nil {
 			return nil, fmt.Errorf("failed exec insert: %w", err)
 		}
@@ -95,7 +97,7 @@ func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*da
 
 	link := data.ShortLinkData{}
 	var userID sql.NullString
-	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, &userID)
+	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, &userID, &link.IsDeleted)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("failed select from public.short_links: %w", err)
 	}
@@ -125,7 +127,7 @@ func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID st
 	for rows.Next() {
 		link := data.ShortLinkData{}
 		// порядок переменных должен соответствовать порядку колонок в запросе
-		err := rows.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, &link.UserID)
+		err := rows.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, &link.UserID, &link.IsDeleted)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("failed scan select from public.short_links: %w", err)
 		}
