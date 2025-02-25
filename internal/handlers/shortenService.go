@@ -15,4 +15,5 @@ type ShorterService interface {
 		[]*services.ShortedLink, error)
 	GetURL(ctx context.Context, shortID string) (string, error)
 	GetAllByUserID(ctx context.Context, userID string) ([]*services.ShortedLink, error)
+	DeleteBatch(ctx context.Context, shortIDs []string) error
 }

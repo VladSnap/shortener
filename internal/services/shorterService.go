@@ -15,6 +15,7 @@ type ShortLinkRepo interface {
 	AddBatch(ctx context.Context, links []*data.ShortLinkData) ([]*data.ShortLinkData, error)
 	Get(ctx context.Context, shortID string) (*data.ShortLinkData, error)
 	GetAllByUserID(ctx context.Context, userID string) ([]*data.ShortLinkData, error)
+	DeleteBatch(ctx context.Context, shortIDs []string) error
 }
 
 // Генерирует мок для ShortLinkRepo
@@ -107,6 +108,15 @@ func (service *NaiveShorterService) GetAllByUserID(ctx context.Context, userID s
 	}
 
 	return shortedLinks, nil
+}
+
+func (service *NaiveShorterService) DeleteBatch(ctx context.Context, shortIDs []string) error {
+	// simple implement
+	err := service.shortLinkRepo.DeleteBatch(ctx, shortIDs)
+	if err != nil {
+		return fmt.Errorf("failed DeleteBatch in repo: %w", err)
+	}
+	return nil
 }
 
 func createNewIds() (id uuid.UUID, shortID string, err error) {
