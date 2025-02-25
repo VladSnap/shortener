@@ -16,7 +16,7 @@ type ShortLinkRepo interface {
 	AddBatch(ctx context.Context, links []*data.ShortLinkData) ([]*data.ShortLinkData, error)
 	Get(ctx context.Context, shortID string) (*data.ShortLinkData, error)
 	GetAllByUserID(ctx context.Context, userID string) ([]*data.ShortLinkData, error)
-	DeleteBatch(ctx context.Context, shortIDs []string, userID string) error
+	DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error
 }
 
 // Генерирует мок для ShortLinkRepo
@@ -109,9 +109,8 @@ func (service *NaiveShorterService) GetAllByUserID(ctx context.Context, userID s
 	return shortedLinks, nil
 }
 
-func (service *NaiveShorterService) DeleteBatch(ctx context.Context, shortIDs []string, userID string) error {
-	// simple implement
-	err := service.shortLinkRepo.DeleteBatch(ctx, shortIDs, userID)
+func (service *NaiveShorterService) DeleteBatch(ctx context.Context, shortIDs []DeleteShortID) error {
+	err := service.shortLinkRepo.DeleteBatch(ctx, convertDeleteShort(shortIDs))
 	if err != nil {
 		return fmt.Errorf("failed DeleteBatch in repo: %w", err)
 	}
@@ -130,4 +129,12 @@ func createNewIds() (id uuid.UUID, shortID string, err error) {
 		return
 	}
 	return
+}
+
+func convertDeleteShort(shortIDs []DeleteShortID) []data.DeleteShortData {
+	dbModels := make([]data.DeleteShortData, 0, len(shortIDs))
+	for _, sid := range shortIDs {
+		dbModels = append(dbModels, data.NewDeleteShortData(sid.ShortURL, sid.UserID))
+	}
+	return dbModels
 }

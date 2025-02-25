@@ -81,11 +81,11 @@ func (repo *FileShortLinkRepo) GetAllByUserID(ctx context.Context, userID string
 	return links, nil
 }
 
-func (repo *FileShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []string, userID string) error {
+func (repo *FileShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error {
 	// Сначала обновляем записи в мемори кэше.
 	for _, sid := range shortIDs {
-		link := repo.links[sid]
-		if link.UserID == userID {
+		link := repo.links[sid.ShortURL]
+		if link.UserID == sid.UserID {
 			link.IsDeleted = true
 		}
 	}

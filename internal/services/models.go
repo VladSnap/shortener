@@ -24,3 +24,12 @@ func NewShortedLink(uuid string, corlID string, origURL string, url string, isDu
 		IsDeleted:    isDel,
 	}
 }
+
+type DeleteShortID struct {
+	ShortURL string
+	UserID   string
+}
+
+func NewDeleteShortID(shortURL string, userID string) DeleteShortID {
+	return DeleteShortID{shortURL, userID}
+}

@@ -140,7 +140,7 @@ func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID st
 	return links, nil
 }
 
-func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []string, userID string) error {
+func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error {
 	tx, err := repo.database.BeginTx(ctx, nil)
 	isCommited := false
 	if err != nil {
@@ -168,7 +168,7 @@ func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []s
 	}()
 
 	for _, shortID := range shortIDs {
-		_, err := stmt.ExecContext(ctx, shortID, userID)
+		_, err := stmt.ExecContext(ctx, shortID.ShortURL, shortID.UserID)
 		if err != nil {
 			return fmt.Errorf("failed exec update: %w", err)
 		}

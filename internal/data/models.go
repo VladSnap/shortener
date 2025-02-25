@@ -16,3 +16,12 @@ func NewShortLinkData(id string, shortURL string, origURL string, userID string)
 		UserID:      userID,
 	}
 }
+
+type DeleteShortData struct {
+	ShortURL string
+	UserID   string
+}
+
+func NewDeleteShortData(shortURL string, userID string) DeleteShortData {
+	return DeleteShortData{shortURL, userID}
+}
