@@ -2,18 +2,16 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/VladSnap/shortener/internal/constants"
+	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/validation"
 )
 
 type DeleteHandler struct {
 	service ShorterService
-	mtx     sync.Mutex
 }
 
 func NewDeleteHandler(service ShorterService) *DeleteHandler {
@@ -57,14 +55,13 @@ func (handler *DeleteHandler) Handle(res http.ResponseWriter, req *http.Request)
 		userID = value
 	}
 
-	handler.mtx.Lock()
-	err := handler.service.DeleteBatch(req.Context(), shortURLs, userID)
-	handler.mtx.Unlock()
-
-	if err != nil {
-		http.Error(res, fmt.Errorf("failed DeleteBatch: %w", err).Error(), http.StatusInternalServerError)
-		return
-	}
+	go func() {
+		err := handler.service.DeleteBatch(req.Context(), shortURLs, userID)
+		if err != nil {
+			log.Zap.Errorf("failed DeleteBatch: %w", err)
+			return
+		}
+	}()
 
 	res.Header().Add(HeaderContentType, HeaderApplicationJSONValue)
 	res.WriteHeader(http.StatusAccepted)
