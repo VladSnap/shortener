@@ -65,6 +65,20 @@ func (mr *MockShortLinkRepoMockRecorder) AddBatch(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBatch", reflect.TypeOf((*MockShortLinkRepo)(nil).AddBatch), arg0, arg1)
 }
 
+// DeleteBatch mocks base method.
+func (m *MockShortLinkRepo) DeleteBatch(arg0 context.Context, arg1 []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteBatch", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteBatch indicates an expected call of DeleteBatch.
+func (mr *MockShortLinkRepoMockRecorder) DeleteBatch(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBatch", reflect.TypeOf((*MockShortLinkRepo)(nil).DeleteBatch), arg0, arg1)
+}
+
 // Get mocks base method.
 func (m *MockShortLinkRepo) Get(arg0 context.Context, arg1 string) (*data.ShortLinkData, error) {
 	m.ctrl.T.Helper()

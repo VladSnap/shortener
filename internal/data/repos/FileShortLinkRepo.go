@@ -13,6 +13,7 @@ import (
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/helpers"
 	"github.com/VladSnap/shortener/internal/log"
+	"golang.org/x/exp/maps"
 )
 
 type FileShortLinkRepo struct {
@@ -65,6 +66,24 @@ func (repo *FileShortLinkRepo) AddBatch(ctx context.Context, links []*data.Short
 func (repo *FileShortLinkRepo) Get(ctx context.Context, shortID string) (*data.ShortLinkData, error) {
 	link := repo.links[shortID]
 	return link, nil
+}
+
+func (repo *FileShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []string) error {
+	// Сначала обновляем записи в мемори кэше.
+	for _, sid := range shortIDs {
+		repo.links[sid].IsDeleted = true
+	}
+	// Удаляем содержимое файла для перезаписи.
+	err := repo.storageFile.Truncate(0)
+	if err != nil {
+		return fmt.Errorf("failed truncate file storage: %w", err)
+	}
+	// Перезаписываем содержимое файла, чтобы проставить флаг is_deleted.
+	_, err = repo.AddBatch(ctx, maps.Values(repo.links))
+	if err != nil {
+		return fmt.Errorf("failed rewrite file after batch delete: %w", err)
+	}
+	return nil
 }
 
 func (repo *FileShortLinkRepo) Close() error {

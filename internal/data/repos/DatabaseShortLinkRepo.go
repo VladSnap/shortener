@@ -138,6 +138,48 @@ func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID st
 	return links, nil
 }
 
+func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []string) error {
+	tx, err := repo.database.BeginTx(ctx, nil)
+	isCommited := false
+	if err != nil {
+		return fmt.Errorf("failed begin db transaction: %w", err)
+	}
+	defer func() {
+		if !isCommited {
+			err := tx.Rollback()
+			if err != nil {
+				log.Zap.Errorf("failed Rollback: %w", err)
+			}
+		}
+	}()
+
+	stmt, err := tx.PrepareContext(ctx,
+		"DELETE FROM public.short_links WHERE short_url = $1")
+	if err != nil {
+		return fmt.Errorf("failed prepare delete: %w", err)
+	}
+	defer func() {
+		err := stmt.Close()
+		if err != nil {
+			log.Zap.Errorf("failed stmt Close: %w", err)
+		}
+	}()
+
+	for _, shortID := range shortIDs {
+		_, err := stmt.ExecContext(ctx, shortID)
+		if err != nil {
+			return fmt.Errorf("failed exec delete: %w", err)
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("failed commit transaction: %w", err)
+	}
+	isCommited = true
+
+	return nil
+}
+
 func toNullString(input string) sql.NullString {
 	if input == "" {
 		return sql.NullString{String: "", Valid: false}
