@@ -156,9 +156,9 @@ func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []s
 	}()
 
 	stmt, err := tx.PrepareContext(ctx,
-		"DELETE FROM public.short_links WHERE short_url = $1 and user_id = $2")
+		"UPDATE public.short_links SET is_deleted=true WHERE short_url = $1 and user_id = $2")
 	if err != nil {
-		return fmt.Errorf("failed prepare delete: %w", err)
+		return fmt.Errorf("failed prepare update: %w", err)
 	}
 	defer func() {
 		err := stmt.Close()
@@ -170,7 +170,7 @@ func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []s
 	for _, shortID := range shortIDs {
 		_, err := stmt.ExecContext(ctx, shortID, userID)
 		if err != nil {
-			return fmt.Errorf("failed exec delete: %w", err)
+			return fmt.Errorf("failed exec update: %w", err)
 		}
 	}
 	err = tx.Commit()
