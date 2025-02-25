@@ -66,17 +66,17 @@ func (mr *MockShorterServiceMockRecorder) CreateShortLinkBatch(arg0, arg1, arg2 
 }
 
 // DeleteBatch mocks base method.
-func (m *MockShorterService) DeleteBatch(arg0 context.Context, arg1 []string) error {
+func (m *MockShorterService) DeleteBatch(arg0 context.Context, arg1 []string, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteBatch", arg0, arg1)
+	ret := m.ctrl.Call(m, "DeleteBatch", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteBatch indicates an expected call of DeleteBatch.
-func (mr *MockShorterServiceMockRecorder) DeleteBatch(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockShorterServiceMockRecorder) DeleteBatch(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBatch", reflect.TypeOf((*MockShorterService)(nil).DeleteBatch), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBatch", reflect.TypeOf((*MockShorterService)(nil).DeleteBatch), arg0, arg1, arg2)
 }
 
 // GetAllByUserID mocks base method.

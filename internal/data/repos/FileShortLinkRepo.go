@@ -68,10 +68,13 @@ func (repo *FileShortLinkRepo) Get(ctx context.Context, shortID string) (*data.S
 	return link, nil
 }
 
-func (repo *FileShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []string) error {
+func (repo *FileShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []string, userID string) error {
 	// Сначала обновляем записи в мемори кэше.
 	for _, sid := range shortIDs {
-		repo.links[sid].IsDeleted = true
+		link := repo.links[sid]
+		if link.UserID == userID {
+			link.IsDeleted = true
+		}
 	}
 	// Удаляем содержимое файла для перезаписи.
 	err := repo.storageFile.Truncate(0)

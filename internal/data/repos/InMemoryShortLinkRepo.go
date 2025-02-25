@@ -38,9 +38,12 @@ func (repo *InMemoryShortLinkRepo) GetAllByUserID(ctx context.Context, userID st
 	return make([]*data.ShortLinkData, 0), nil
 }
 
-func (repo *InMemoryShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []string) error {
+func (repo *InMemoryShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []string, userID string) error {
 	for _, sid := range shortIDs {
-		repo.links[sid].IsDeleted = true
+		link := repo.links[sid]
+		if link.UserID == userID {
+			link.IsDeleted = true
+		}
 	}
 	return nil
 }
