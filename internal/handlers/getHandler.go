@@ -34,7 +34,7 @@ func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if url == "" {
+	if url == nil {
 		http.Error(res, "Url not found", http.StatusNotFound)
 		return
 	}

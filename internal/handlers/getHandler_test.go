@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/VladSnap/shortener/internal/services"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -127,8 +128,14 @@ func TestGetHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var slink *services.ShortedLink
+			if tt.url == "" {
+				slink = nil
+			} else {
+				slink = &services.ShortedLink{OriginalURL: tt.url}
+			}
 			mockService.EXPECT().GetURL(ctx, tt.id).
-				Return(tt.url, nil).
+				Return(slink, nil).
 				AnyTimes()
 
 			request := httptest.NewRequest(tt.httpMethod, tt.requestPath, http.NoBody)

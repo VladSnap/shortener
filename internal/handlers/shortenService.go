@@ -13,7 +13,7 @@ type ShorterService interface {
 	CreateShortLink(ctx context.Context, originalURL string, userID string) (*services.ShortedLink, error)
 	CreateShortLinkBatch(ctx context.Context, originalLinks []*services.OriginalLink, userID string) (
 		[]*services.ShortedLink, error)
-	GetURL(ctx context.Context, shortID string) (string, error)
+	GetURL(ctx context.Context, shortID string) (*services.ShortedLink, error)
 	GetAllByUserID(ctx context.Context, userID string) ([]*services.ShortedLink, error)
 	DeleteBatch(ctx context.Context, shortIDs []string) error
 }

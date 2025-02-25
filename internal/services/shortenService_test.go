@@ -78,7 +78,7 @@ func TestNaiveShortenService_GetURL(t *testing.T) {
 			mockRepo.EXPECT().Get(ctx, tt.shortID).Return(retLink, nil)
 			result, err := service.GetURL(context.Background(), tt.shortID)
 			assert.NoError(t, err, "no expect error get url")
-			assert.Equal(t, tt.want.fullURL, result)
+			assert.Equal(t, tt.want.fullURL, result.OriginalURL)
 		})
 	}
 }

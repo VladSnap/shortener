@@ -44,25 +44,25 @@ func (service *NaiveShorterService) CreateShortLink(ctx context.Context,
 	if err != nil {
 		var duplErr *data.DuplicateShortLinkError
 		if errors.As(err, &duplErr) {
-			res := NewShortedLink("", "", "", duplErr.ShortURL, true)
+			res := NewShortedLink("", "", "", duplErr.ShortURL, true, false)
 			return res, nil
 		}
 		return nil, fmt.Errorf("failed create short link object: %w", err)
 	}
 	// Если короткие ссылки разные, значит был найден дубль и возвращено его значение.
 	isDuplicate := shortID != createdLink.ShortURL
-	res := NewShortedLink(createdLink.UUID, "", createdLink.OriginalURL, createdLink.ShortURL, isDuplicate)
+	res := NewShortedLink(createdLink.UUID, "", createdLink.OriginalURL, createdLink.ShortURL, isDuplicate, false)
 	return res, nil
 }
 
-func (service *NaiveShorterService) GetURL(ctx context.Context, shortID string) (string, error) {
+func (service *NaiveShorterService) GetURL(ctx context.Context, shortID string) (*ShortedLink, error) {
 	link, err := service.shortLinkRepo.Get(ctx, shortID)
 	if err != nil {
-		return "", fmt.Errorf("failed get url from repo: %w", err)
+		return nil, fmt.Errorf("failed get url from repo: %w", err)
 	} else if link != nil {
-		return link.OriginalURL, nil
+		return NewShortedLink(link.UUID, "", link.OriginalURL, link.ShortURL, false, link.IsDeleted), nil
 	}
-	return "", nil
+	return nil, nil
 }
 
 func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context,
@@ -81,7 +81,7 @@ func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context,
 		}
 		dm := data.NewShortLinkData(id.String(), shortID, ol.URL, userID)
 		dataModels = append(dataModels, dm)
-		cm := NewShortedLink(id.String(), ol.CorelationID, ol.URL, shortID, false)
+		cm := NewShortedLink(id.String(), ol.CorelationID, ol.URL, shortID, false, false)
 		createdModels = append(createdModels, cm)
 	}
 
@@ -103,7 +103,7 @@ func (service *NaiveShorterService) GetAllByUserID(ctx context.Context, userID s
 
 	shortedLinks := make([]*ShortedLink, 0, len(links))
 	for _, sl := range links {
-		shortedLink := NewShortedLink(sl.UUID, "", sl.OriginalURL, sl.ShortURL, false)
+		shortedLink := NewShortedLink(sl.UUID, "", sl.OriginalURL, sl.ShortURL, false, sl.IsDeleted)
 		shortedLinks = append(shortedLinks, shortedLink)
 	}
 
