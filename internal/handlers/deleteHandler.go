@@ -61,8 +61,9 @@ func (handler *DeleteHandler) Handle(res http.ResponseWriter, req *http.Request)
 		userID = value
 	}
 
+	const toDeleteChanSize = 100
 	go func() {
-		toDeleteChan := make(chan services.DeleteShortID, 100)
+		toDeleteChan := make(chan services.DeleteShortID, toDeleteChanSize)
 		defer close(toDeleteChan)
 
 		for _, url := range shortURLs {
