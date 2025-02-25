@@ -1,23 +1,28 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
 
 	"github.com/VladSnap/shortener/internal/constants"
-	"github.com/VladSnap/shortener/internal/log"
+	"github.com/VladSnap/shortener/internal/services"
 	"github.com/VladSnap/shortener/internal/validation"
 )
 
 type DeleteHandler struct {
-	service ShorterService
+	deleteWorker DeleterWorker
 }
 
-func NewDeleteHandler(service ShorterService) *DeleteHandler {
+type DeleterWorker interface {
+	Close() error
+	AddToDelete(shortIDs chan services.DeleteShortID)
+	RunWork()
+}
+
+func NewDeleteHandler(deleteWorker DeleterWorker) *DeleteHandler {
 	handler := new(DeleteHandler)
-	handler.service = service
+	handler.deleteWorker = deleteWorker
 	return handler
 }
 
@@ -57,11 +62,15 @@ func (handler *DeleteHandler) Handle(res http.ResponseWriter, req *http.Request)
 	}
 
 	go func() {
-		err := handler.service.DeleteBatch(context.WithoutCancel(req.Context()), shortURLs, userID)
-		if err != nil {
-			log.Zap.Errorf("failed DeleteBatch: %w", err)
-			return
+		toDeleteChan := make(chan services.DeleteShortID, 100)
+		defer close(toDeleteChan)
+
+		for _, url := range shortURLs {
+			deleteSID := services.NewDeleteShortID(url, userID)
+			toDeleteChan <- deleteSID
 		}
+
+		handler.deleteWorker.AddToDelete(toDeleteChan)
 	}()
 
 	res.Header().Add(HeaderContentType, HeaderApplicationJSONValue)
