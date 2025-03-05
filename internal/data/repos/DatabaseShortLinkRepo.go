@@ -156,7 +156,7 @@ func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []d
 	}()
 
 	stmt, err := tx.PrepareContext(ctx,
-		"UPDATE public.short_links SET is_deleted=true WHERE short_url = $1 and user_id = $2")
+		"UPDATE public.short_links SET is_deleted=true WHERE is_deleted != true and short_url = $1 and user_id = $2")
 	if err != nil {
 		return fmt.Errorf("failed prepare update: %w", err)
 	}

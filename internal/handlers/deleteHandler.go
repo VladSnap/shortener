@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/services"
@@ -62,17 +64,27 @@ func (handler *DeleteHandler) Handle(res http.ResponseWriter, req *http.Request)
 	}
 
 	const toDeleteChanSize = 100
-	go func() {
-		toDeleteChan := make(chan services.DeleteShortID, toDeleteChanSize)
-		defer close(toDeleteChan)
 
-		for _, url := range shortURLs {
+	toDeleteChan := make(chan services.DeleteShortID, toDeleteChanSize)
+	defer close(toDeleteChan)
+
+	const cancelTimeoutSec = 2
+	// Создаем контекст с таймаутом 2 секунды
+	ctx, cancel := context.WithTimeout(context.Background(), cancelTimeoutSec*time.Second)
+	defer cancel()
+
+rng:
+	for _, url := range shortURLs {
+		select {
+		case <-ctx.Done():
+			break rng // Выйдем из цикла, если мы не уложились в таймаут записи данных, канал автоматически закроется.
+		default:
 			deleteSID := services.NewDeleteShortID(url, userID)
 			toDeleteChan <- deleteSID
 		}
+	}
 
-		handler.deleteWorker.AddToDelete(toDeleteChan)
-	}()
+	handler.deleteWorker.AddToDelete(toDeleteChan)
 
 	res.Header().Add(HeaderContentType, HeaderApplicationJSONValue)
 	res.WriteHeader(http.StatusAccepted)

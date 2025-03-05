@@ -8,6 +8,7 @@ import (
 	"github.com/VladSnap/shortener/internal/services"
 )
 
+// Эти константы нужны, чтобы линтер не ругался на магические числа. В конфиг не вижу смысла выносить это.
 const flushToDBIntervalSec = 5
 const fanInChanSize = 10
 
