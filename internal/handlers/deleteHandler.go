@@ -16,6 +16,8 @@ type DeleteHandler struct {
 	deleteWorker DeleterWorker
 }
 
+//go:generate mockgen -destination=mocks/deleteWorker_mock.go -package=mocks github.com/VladSnap/shortener/internal/handlers DeleterWorker
+
 type DeleterWorker interface {
 	Close() error
 	AddToDelete(shortIDs chan services.DeleteShortID)
