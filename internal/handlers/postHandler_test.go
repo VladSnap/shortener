@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/VladSnap/shortener/internal/constants"
+	m "github.com/VladSnap/shortener/internal/handlers/mocks"
 	"github.com/VladSnap/shortener/internal/services"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -125,7 +126,7 @@ func TestPostHandler(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockService := NewMockShorterService(ctrl)
+	mockService := m.NewMockShorterService(ctrl)
 	postHandler := NewPostHandler(mockService, baseURL)
 	ret := &services.ShortedLink{URL: ""}
 	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"

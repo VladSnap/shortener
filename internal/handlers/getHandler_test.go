@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	m "github.com/VladSnap/shortener/internal/handlers/mocks"
 	"github.com/VladSnap/shortener/internal/services"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -123,7 +124,7 @@ func TestGetHandler(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockService := NewMockShorterService(ctrl)
+	mockService := m.NewMockShorterService(ctrl)
 	getHandler := NewGetHandler(mockService)
 
 	for _, tt := range tests {

@@ -7,7 +7,7 @@ import (
 )
 
 // Генерирует мок для ShorterService
-//go:generate mockgen -destination=mock_handlers_test.go -package handlers github.com/VladSnap/shortener/internal/handlers ShorterService
+//go:generate mockgen -destination=mocks/shorterService_mock.go -package mocks github.com/VladSnap/shortener/internal/handlers ShorterService
 
 type ShorterService interface {
 	CreateShortLink(ctx context.Context, originalURL string, userID string) (*services.ShortedLink, error)
