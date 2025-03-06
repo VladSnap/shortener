@@ -5,15 +5,18 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/helpers"
 	"github.com/google/uuid"
 )
 
 type ShortLinkRepo interface {
-	CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error)
+	Add(ctx context.Context, link *data.ShortLinkData) (*data.ShortLinkData, error)
 	AddBatch(ctx context.Context, links []*data.ShortLinkData) ([]*data.ShortLinkData, error)
-	GetURL(shortID string) (*data.ShortLinkData, error)
+	Get(ctx context.Context, shortID string) (*data.ShortLinkData, error)
+	GetAllByUserID(ctx context.Context, userID string) ([]*data.ShortLinkData, error)
+	DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error
 }
 
 // Генерирует мок для ShortLinkRepo
@@ -29,42 +32,40 @@ func NewNaiveShorterService(repo ShortLinkRepo) *NaiveShorterService {
 	return service
 }
 
-const shortIDLength = 8
-
-func (service *NaiveShorterService) CreateShortLink(originalURL string) (*ShortedLink, error) {
+func (service *NaiveShorterService) CreateShortLink(ctx context.Context,
+	originalURL string, userID string) (*ShortedLink, error) {
 	id, shortID, err := createNewIds()
 	if err != nil {
 		return nil, fmt.Errorf("failed create ids: %w", err)
 	}
-	newLink := &data.ShortLinkData{UUID: id.String(), ShortURL: shortID, OriginalURL: originalURL}
-	createdLink, err := service.shortLinkRepo.CreateShortLink(newLink)
+	newLink := data.NewShortLinkData(id.String(), shortID, originalURL, userID)
+	createdLink, err := service.shortLinkRepo.Add(ctx, newLink)
 	if err != nil {
 		var duplErr *data.DuplicateShortLinkError
 		if errors.As(err, &duplErr) {
-			res := &ShortedLink{URL: duplErr.ShortURL, IsDuplicated: true}
+			res := NewShortedLink("", "", "", duplErr.ShortURL, true, false)
 			return res, nil
 		}
 		return nil, fmt.Errorf("failed create short link object: %w", err)
 	}
-	res := &ShortedLink{
-		UUID: createdLink.UUID,
-		URL:  createdLink.ShortURL,
-		// Для стратегии PreChek, если короткие ссылки разные, значит был найден дубль и возвращено его значение.
-		IsDuplicated: shortID != createdLink.ShortURL}
+	// Если короткие ссылки разные, значит был найден дубль и возвращено его значение.
+	isDuplicate := shortID != createdLink.ShortURL
+	res := NewShortedLink(createdLink.UUID, "", createdLink.OriginalURL, createdLink.ShortURL, isDuplicate, false)
 	return res, nil
 }
 
-func (service *NaiveShorterService) GetURL(shortID string) (string, error) {
-	link, err := service.shortLinkRepo.GetURL(shortID)
+func (service *NaiveShorterService) GetURL(ctx context.Context, shortID string) (*ShortedLink, error) {
+	link, err := service.shortLinkRepo.Get(ctx, shortID)
 	if err != nil {
-		return "", fmt.Errorf("failed get url from repo: %w", err)
+		return nil, fmt.Errorf("failed get url from repo: %w", err)
 	} else if link != nil {
-		return link.OriginalURL, nil
+		return NewShortedLink(link.UUID, "", link.OriginalURL, link.ShortURL, false, link.IsDeleted), nil
 	}
-	return "", nil
+	return nil, nil //nolint:nilnil // expected return nil
 }
 
-func (service *NaiveShorterService) CreateShortLinkBatch(originalLinks []*OriginalLink) ([]*ShortedLink, error) {
+func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context,
+	originalLinks []*OriginalLink, userID string) ([]*ShortedLink, error) {
 	dataModels := make([]*data.ShortLinkData, 0, len(originalLinks))
 	createdModels := make([]*ShortedLink, 0, len(originalLinks))
 
@@ -77,23 +78,13 @@ func (service *NaiveShorterService) CreateShortLinkBatch(originalLinks []*Origin
 		if err != nil {
 			return nil, fmt.Errorf("failed create ids: %w", err)
 		}
-
-		dm := &data.ShortLinkData{
-			UUID:        id.String(),
-			ShortURL:    shortID,
-			OriginalURL: ol.URL,
-		}
+		dm := data.NewShortLinkData(id.String(), shortID, ol.URL, userID)
 		dataModels = append(dataModels, dm)
-		cm := &ShortedLink{
-			UUID:         id.String(),
-			CorelationID: ol.CorelationID,
-			OriginalURL:  ol.URL,
-			URL:          shortID,
-		}
+		cm := NewShortedLink(id.String(), ol.CorelationID, ol.URL, shortID, false, false)
 		createdModels = append(createdModels, cm)
 	}
 
-	_, err := service.shortLinkRepo.AddBatch(context.TODO(), dataModels)
+	_, err := service.shortLinkRepo.AddBatch(ctx, dataModels)
 	if err != nil {
 		return nil, fmt.Errorf("failed add batch in repo: %w", err)
 	}
@@ -102,16 +93,48 @@ func (service *NaiveShorterService) CreateShortLinkBatch(originalLinks []*Origin
 	return createdModels, nil
 }
 
+func (service *NaiveShorterService) GetAllByUserID(ctx context.Context, userID string) (
+	[]*ShortedLink, error) {
+	links, err := service.shortLinkRepo.GetAllByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed GetAllByUserId: %w", err)
+	}
+
+	shortedLinks := make([]*ShortedLink, 0, len(links))
+	for _, sl := range links {
+		shortedLink := NewShortedLink(sl.UUID, "", sl.OriginalURL, sl.ShortURL, false, sl.IsDeleted)
+		shortedLinks = append(shortedLinks, shortedLink)
+	}
+
+	return shortedLinks, nil
+}
+
+func (service *NaiveShorterService) DeleteBatch(ctx context.Context, shortIDs []DeleteShortID) error {
+	err := service.shortLinkRepo.DeleteBatch(ctx, convertDeleteShort(shortIDs))
+	if err != nil {
+		return fmt.Errorf("failed DeleteBatch in repo: %w", err)
+	}
+	return nil
+}
+
 func createNewIds() (id uuid.UUID, shortID string, err error) {
 	id, err = uuid.NewRandom()
 	if err != nil {
 		err = fmt.Errorf("failed create random: %w", err)
 		return
 	}
-	shortID, err = helpers.RandStringRunes(shortIDLength)
+	shortID, err = helpers.RandStringRunes(constants.ShortIDLength)
 	if err != nil {
 		err = fmt.Errorf("failed create short url: %w", err)
 		return
 	}
 	return
+}
+
+func convertDeleteShort(shortIDs []DeleteShortID) []data.DeleteShortData {
+	dbModels := make([]data.DeleteShortData, 0, len(shortIDs))
+	for _, sid := range shortIDs {
+		dbModels = append(dbModels, data.NewDeleteShortData(sid.ShortURL, sid.UserID))
+	}
+	return dbModels
 }

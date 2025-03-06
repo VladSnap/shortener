@@ -1,0 +1,1 @@
+ALTER TABLE public.short_links DROP COLUMN is_deleted

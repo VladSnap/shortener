@@ -10,15 +10,6 @@ import (
 	"github.com/VladSnap/shortener/internal/log"
 )
 
-const checkStrg duplicateStrategy = OnConflict
-
-type duplicateStrategy int
-
-const (
-	PreCheck duplicateStrategy = iota
-	OnConflict
-)
-
 type DatabaseShortLinkRepo struct {
 	database *data.DatabaseShortener
 }
@@ -29,54 +20,35 @@ func NewDatabaseShortLinkRepo(database *data.DatabaseShortener) *DatabaseShortLi
 	return repo
 }
 
-func (repo *DatabaseShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error) {
-	switch {
-	case checkStrg == PreCheck:
-		// Пробуем найти по оригинальной ссылке сокращенную, чтобы не делать попытку записи,
-		// т.к. в таблице есть ограничение на уникальность поля orig_url.
-		existLink, ok, err := repo.getShortLinkByOriginalURL(link.OriginalURL)
+func (repo *DatabaseShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData) (
+	*data.ShortLinkData, error) {
+	sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url, user_id, is_deleted)" +
+		"VALUES ($1, $2, $3, $4, $5) " +
+		"ON CONFLICT (orig_url) DO UPDATE " +
+		"SET orig_url = short_links.orig_url " +
+		"RETURNING short_links.short_url"
 
-		if err != nil {
-			return nil, fmt.Errorf("failed getShortLinkByOriginalURL: %w", err)
-		} else if ok {
-			return existLink, nil // Вернем найденный результат, чтобы возвратить сокращенную ссылку в ответ на запрос.
-		}
-
-		sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url) VALUES ($1, $2, $3)"
-		_, err = repo.database.ExecContext(context.Background(), sqlText, link.UUID, link.ShortURL, link.OriginalURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed insert to public.short_links new row: %w", err)
-		}
+	//nolint:execinquery // use ON CONFLICT and Return value
+	row := repo.database.QueryRowContext(ctx, sqlText, link.UUID, link.ShortURL,
+		link.OriginalURL, toNullString(link.UserID), link.IsDeleted)
+	if row.Err() != nil {
+		return nil, fmt.Errorf("failed insert to public.short_links new row: %w", row.Err())
+	}
+	var shortURL string
+	err := row.Scan(&shortURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed scan insert result from public.short_links new row: %w", err)
+	}
+	if shortURL == link.ShortURL {
 		return link, nil
-	case checkStrg == OnConflict:
-		sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url) VALUES ($1, $2, $3) " +
-			"ON CONFLICT (orig_url) DO UPDATE " +
-			"SET orig_url = short_links.orig_url " +
-			"RETURNING short_links.short_url"
-
-		//nolint:execinquery // use ONCONFLICT and Return value
-		row := repo.database.QueryRowContext(context.Background(), sqlText, link.UUID, link.ShortURL, link.OriginalURL)
-		if row.Err() != nil {
-			return nil, fmt.Errorf("failed insert to public.short_links new row: %w", row.Err())
-		}
-		var shortURL string
-		err := row.Scan(&shortURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed scan insert result from public.short_links new row: %w", err)
-		}
-		if shortURL == link.ShortURL {
-			return link, nil
-		} else {
-			return nil, data.NewDuplicateError(shortURL) //nolint:wrapcheck // is new error
-		}
-	default:
-		return nil, errors.New("invalid checkStrg value")
+	} else {
+		return nil, data.NewDuplicateError(shortURL) //nolint:wrapcheck // is new error
 	}
 }
 
 func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.ShortLinkData) (
 	[]*data.ShortLinkData, error) {
-	tx, err := repo.database.Begin()
+	tx, err := repo.database.BeginTx(ctx, nil)
 	isCommited := false
 	if err != nil {
 		return nil, fmt.Errorf("failed begin db transaction: %w", err)
@@ -91,8 +63,8 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	}()
 
 	stmt, err := tx.PrepareContext(ctx,
-		"INSERT INTO public.short_links (uuid, short_url, orig_url)"+
-			" VALUES($1, $2, $3)")
+		"INSERT INTO public.short_links (uuid, short_url, orig_url, user_id, is_deleted)"+
+			" VALUES($1, $2, $3, $4, $5)")
 	if err != nil {
 		return nil, fmt.Errorf("failed prepare insert: %w", err)
 	}
@@ -104,7 +76,8 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	}()
 
 	for _, link := range links {
-		_, err := stmt.ExecContext(ctx, link.UUID, link.ShortURL, link.OriginalURL)
+		_, err := stmt.ExecContext(ctx, link.UUID, link.ShortURL, link.OriginalURL,
+			toNullString(link.UserID), link.IsDeleted)
 		if err != nil {
 			return nil, fmt.Errorf("failed exec insert: %w", err)
 		}
@@ -118,40 +91,100 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	return links, nil
 }
 
-func (repo *DatabaseShortLinkRepo) GetURL(shortID string) (*data.ShortLinkData, error) {
-	return repo.GetShortLink(shortID)
-}
-
-func (repo *DatabaseShortLinkRepo) GetShortLink(shortID string) (*data.ShortLinkData, error) {
-	sqlText := `SELECT uuid, short_url, orig_url
-            FROM public.short_links
-			WHERE short_url = $1`
-	row := repo.database.QueryRowContext(context.Background(), sqlText, shortID)
+func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*data.ShortLinkData, error) {
+	sqlText := `SELECT * FROM public.short_links WHERE short_url = $1`
+	row := repo.database.QueryRowContext(ctx, sqlText, shortID)
 
 	link := data.ShortLinkData{}
-	// порядок переменных должен соответствовать порядку колонок в запросе
-	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL)
-	if err != nil && err != sql.ErrNoRows {
+	var userID sql.NullString
+	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, &userID, &link.IsDeleted)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("failed select from public.short_links: %w", err)
+	}
+	if userID.Valid {
+		link.UserID = userID.String
 	}
 
 	return &link, nil
 }
 
-func (repo *DatabaseShortLinkRepo) getShortLinkByOriginalURL(originalURL string) (*data.ShortLinkData, bool, error) {
-	sqlText := `SELECT uuid, short_url, orig_url
-            FROM public.short_links
-			WHERE orig_url = $1`
-	row := repo.database.QueryRowContext(context.Background(), sqlText, originalURL)
+func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID string) (
+	[]*data.ShortLinkData, error) {
+	sqlText := `SELECT * FROM public.short_links WHERE user_id = $1`
+	rows, err := repo.database.QueryContext(ctx, sqlText, toNullString(userID))
+	if err != nil {
+		return nil, fmt.Errorf("failed select from public.short_links: %w", err)
+	}
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Zap.Errorf("failed rows Close: %w", err)
+		}
+	}()
 
-	link := data.ShortLinkData{}
-	// порядок переменных должен соответствовать порядку колонок в запросе
-	err := row.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL)
-	if err != nil && err != sql.ErrNoRows {
-		return nil, false, fmt.Errorf("failed select ByOriginalURL from public.short_links: %w", err)
+	const startSizeLinks int = 10
+	links := make([]*data.ShortLinkData, 0, startSizeLinks)
+	for rows.Next() {
+		link := data.ShortLinkData{}
+		// порядок переменных должен соответствовать порядку колонок в запросе
+		err := rows.Scan(&link.UUID, &link.ShortURL, &link.OriginalURL, &link.UserID, &link.IsDeleted)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("failed scan select from public.short_links: %w", err)
+		}
+		links = append(links, &link)
 	}
-	if err == sql.ErrNoRows {
-		return &link, false, nil
+
+	if err := rows.Err(); err != nil {
+		log.Zap.Errorf("last error encountered by Rows.Scan: %w", err)
 	}
-	return &link, true, nil
+	return links, nil
+}
+
+func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error {
+	tx, err := repo.database.BeginTx(ctx, nil)
+	isCommited := false
+	if err != nil {
+		return fmt.Errorf("failed begin db transaction: %w", err)
+	}
+	defer func() {
+		if !isCommited {
+			err := tx.Rollback()
+			if err != nil {
+				log.Zap.Errorf("failed Rollback: %w", err)
+			}
+		}
+	}()
+
+	stmt, err := tx.PrepareContext(ctx,
+		"UPDATE public.short_links SET is_deleted=true WHERE is_deleted != true and short_url = $1 and user_id = $2")
+	if err != nil {
+		return fmt.Errorf("failed prepare update: %w", err)
+	}
+	defer func() {
+		err := stmt.Close()
+		if err != nil {
+			log.Zap.Errorf("failed stmt Close: %w", err)
+		}
+	}()
+
+	for _, shortID := range shortIDs {
+		_, err := stmt.ExecContext(ctx, shortID.ShortURL, shortID.UserID)
+		if err != nil {
+			return fmt.Errorf("failed exec update: %w", err)
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("failed commit transaction: %w", err)
+	}
+	isCommited = true
+
+	return nil
+}
+
+func toNullString(input string) sql.NullString {
+	if input == "" {
+		return sql.NullString{String: "", Valid: false}
+	}
+	return sql.NullString{String: input, Valid: true}
 }

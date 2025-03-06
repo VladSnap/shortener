@@ -35,6 +35,21 @@ func (m *MockShortLinkRepo) EXPECT() *MockShortLinkRepoMockRecorder {
 	return m.recorder
 }
 
+// Add mocks base method.
+func (m *MockShortLinkRepo) Add(arg0 context.Context, arg1 *data.ShortLinkData) (*data.ShortLinkData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Add", arg0, arg1)
+	ret0, _ := ret[0].(*data.ShortLinkData)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Add indicates an expected call of Add.
+func (mr *MockShortLinkRepoMockRecorder) Add(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockShortLinkRepo)(nil).Add), arg0, arg1)
+}
+
 // AddBatch mocks base method.
 func (m *MockShortLinkRepo) AddBatch(arg0 context.Context, arg1 []*data.ShortLinkData) ([]*data.ShortLinkData, error) {
 	m.ctrl.T.Helper()
@@ -50,32 +65,46 @@ func (mr *MockShortLinkRepoMockRecorder) AddBatch(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBatch", reflect.TypeOf((*MockShortLinkRepo)(nil).AddBatch), arg0, arg1)
 }
 
-// CreateShortLink mocks base method.
-func (m *MockShortLinkRepo) CreateShortLink(arg0 *data.ShortLinkData) (*data.ShortLinkData, error) {
+// DeleteBatch mocks base method.
+func (m *MockShortLinkRepo) DeleteBatch(arg0 context.Context, arg1 []data.DeleteShortData) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateShortLink", arg0)
+	ret := m.ctrl.Call(m, "DeleteBatch", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteBatch indicates an expected call of DeleteBatch.
+func (mr *MockShortLinkRepoMockRecorder) DeleteBatch(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBatch", reflect.TypeOf((*MockShortLinkRepo)(nil).DeleteBatch), arg0, arg1)
+}
+
+// Get mocks base method.
+func (m *MockShortLinkRepo) Get(arg0 context.Context, arg1 string) (*data.ShortLinkData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", arg0, arg1)
 	ret0, _ := ret[0].(*data.ShortLinkData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateShortLink indicates an expected call of CreateShortLink.
-func (mr *MockShortLinkRepoMockRecorder) CreateShortLink(arg0 interface{}) *gomock.Call {
+// Get indicates an expected call of Get.
+func (mr *MockShortLinkRepoMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateShortLink", reflect.TypeOf((*MockShortLinkRepo)(nil).CreateShortLink), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockShortLinkRepo)(nil).Get), arg0, arg1)
 }
 
-// GetURL mocks base method.
-func (m *MockShortLinkRepo) GetURL(arg0 string) (*data.ShortLinkData, error) {
+// GetAllByUserID mocks base method.
+func (m *MockShortLinkRepo) GetAllByUserID(arg0 context.Context, arg1 string) ([]*data.ShortLinkData, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetURL", arg0)
-	ret0, _ := ret[0].(*data.ShortLinkData)
+	ret := m.ctrl.Call(m, "GetAllByUserID", arg0, arg1)
+	ret0, _ := ret[0].([]*data.ShortLinkData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetURL indicates an expected call of GetURL.
-func (mr *MockShortLinkRepoMockRecorder) GetURL(arg0 interface{}) *gomock.Call {
+// GetAllByUserID indicates an expected call of GetAllByUserID.
+func (mr *MockShortLinkRepoMockRecorder) GetAllByUserID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetURL", reflect.TypeOf((*MockShortLinkRepo)(nil).GetURL), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllByUserID", reflect.TypeOf((*MockShortLinkRepo)(nil).GetAllByUserID), arg0, arg1)
 }

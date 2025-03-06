@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"os"
+	"testing"
 
 	"github.com/VladSnap/shortener/internal/constants"
 	"go.uber.org/zap"
@@ -13,6 +14,16 @@ var Zap *zap.SugaredLogger
 var logFile *os.File
 
 func init() {
+	if isRunAsGenerate() || testing.Testing() {
+		logger, err := zap.NewDevelopment()
+		if err != nil {
+			panic("cannot initialize zap logger")
+		}
+
+		Zap = logger.Sugar()
+		return
+	}
+
 	// Создаем файл для записи логов
 	file, err := os.OpenFile("shortener.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, constants.FileRWPerm)
 	logFile = file
@@ -47,4 +58,8 @@ func Close() error {
 		return fmt.Errorf("failed close log file: %w", err)
 	}
 	return nil
+}
+
+func isRunAsGenerate() bool {
+	return os.Getenv("GOFILE") != ""
 }

@@ -1,0 +1,1 @@
+ALTER TABLE public.short_links ADD COLUMN is_deleted boolean NOT NULL

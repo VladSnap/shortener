@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/VladSnap/shortener/internal/constants"
+	m "github.com/VladSnap/shortener/internal/handlers/mocks"
 	"github.com/VladSnap/shortener/internal/services"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +41,7 @@ func TestShortenHandler(t *testing.T) {
 			shortID:     "fVdpTFBo",
 			want: want{
 				code:         201,
-				contentType:  HeaderApplicationJSON,
+				contentType:  HeaderApplicationJSONValue,
 				responseBody: fmt.Sprintf("{\"result\":\"%v/fVdpTFBo\"}\n", baseURL),
 			},
 		}, {
@@ -50,7 +53,7 @@ func TestShortenHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Full URL verify error\n",
+				responseBody: "URL verify error\n",
 			},
 		}, {
 			name:        "request body is empty",
@@ -90,15 +93,19 @@ func TestShortenHandler(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockService := NewMockShorterService(ctrl)
+	mockService := m.NewMockShorterService(ctrl)
 	handler := NewShortenHandler(mockService, baseURL)
 	ret := &services.ShortedLink{URL: ""}
-	mockService.EXPECT().CreateShortLink("http://test6.url").Return(ret, errors.New("random fail")).AnyTimes()
+	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
+	ctx := context.WithValue(context.Background(), constants.UserIDContextKey, userID)
+	mockService.EXPECT().CreateShortLink(ctx, "http://test6.url", userID).
+		Return(ret, errors.New("random fail")).AnyTimes()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ret = &services.ShortedLink{URL: tt.shortID}
-			mockService.EXPECT().CreateShortLink(tt.sourceURL).Return(ret, nil).AnyTimes()
+			mockService.EXPECT().CreateShortLink(ctx, tt.sourceURL, userID).
+				Return(ret, nil).AnyTimes()
 
 			requestData := ShortenRequest{
 				URL: tt.sourceURL,
@@ -110,7 +117,8 @@ func TestShortenHandler(t *testing.T) {
 
 			r := bytes.NewReader(rqBytes)
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, r)
-			postRequest.Header.Add("Content-Type", HeaderApplicationJSON)
+			postRequest.Header.Add(HeaderContentType, HeaderApplicationJSONValue)
+			postRequest = postRequest.WithContext(ctx)
 			w := httptest.NewRecorder()
 			handler.Handle(w, postRequest)
 			res := w.Result()
@@ -122,7 +130,7 @@ func TestShortenHandler(t *testing.T) {
 			assert.NoError(t, err, "no error for close response body")
 			resBodyStr := string(resBody)
 
-			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"), "Incorrect header content-type")
+			assert.Equal(t, tt.want.contentType, res.Header.Get(HeaderContentType), "Incorrect header content-type")
 			assert.Equal(t, tt.want.responseBody, resBodyStr, "Incorrect response body")
 		})
 	}

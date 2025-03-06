@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"net/http"
-	"strings"
+
+	"github.com/VladSnap/shortener/internal/validation"
 )
 
 type GetHandler struct {
@@ -22,27 +23,27 @@ func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	}
 
 	shortID := req.PathValue("id")
-	if !validatePath(req.URL.Path) || shortID == "" {
+	if !validation.ValidatePath(req.URL.Path) || shortID == "" {
 		http.Error(res, "Request path incorrect", http.StatusBadRequest)
 		return
 	}
 
-	url, err := handler.service.GetURL(shortID)
+	url, err := handler.service.GetURL(req.Context(), shortID)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if url == "" {
+	if url == nil {
 		http.Error(res, "Url not found", http.StatusNotFound)
 		return
 	}
 
-	res.Header().Set("Location", url)
-	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
-}
+	if url.IsDeleted {
+		http.Error(res, "Url has been removed", http.StatusGone)
+		return
+	}
 
-func validatePath(path string) bool {
-	segments := strings.Split(path, "/")
-	return len(segments) == 2 && segments[1] != ""
+	res.Header().Set("Location", url.OriginalURL)
+	http.Redirect(res, req, url.OriginalURL, http.StatusTemporaryRedirect)
 }

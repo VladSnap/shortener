@@ -2,12 +2,15 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/VladSnap/shortener/internal/constants"
+	m "github.com/VladSnap/shortener/internal/handlers/mocks"
 	"github.com/VladSnap/shortener/internal/services"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +42,7 @@ func TestBatchHandler_Handle(t *testing.T) {
 				{CorrelationID: "crid2", OriginalURL: "http://test2.url/"}},
 			want: want{
 				code:        201,
-				contentType: "application/json",
+				contentType: HeaderApplicationJSONValue,
 				shortedURLs: []ShortenRowResponse{
 					{CorrelationID: "crid1", ShortURL: baseURL + "/hbFgvtUO"},
 					{CorrelationID: "crid2", ShortURL: baseURL + "/fVdpTFBo"},
@@ -55,15 +58,17 @@ func TestBatchHandler_Handle(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "originalURL verify error\n",
+				responseBody: "OriginalURL verify error\n",
 			},
 		},
 	}
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockService := NewMockShorterService(ctrl)
+	mockService := m.NewMockShorterService(ctrl)
 	batchHandler := NewBatchHandler(mockService, baseURL)
+	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
+	ctx := context.WithValue(context.Background(), constants.UserIDContextKey, userID)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -74,20 +79,23 @@ func TestBatchHandler_Handle(t *testing.T) {
 					CorelationID: tt.originalURLs[i].CorrelationID})
 			}
 			links := convertToShortLink(tt.originalURLs)
-			mockService.EXPECT().CreateShortLinkBatch(links).Return(shortedLinks, nil).AnyTimes()
+			mockService.EXPECT().CreateShortLinkBatch(ctx, links, userID).
+				Return(shortedLinks, nil).
+				AnyTimes()
 
 			var bufReq bytes.Buffer
 			err := json.NewEncoder(&bufReq).Encode(tt.originalURLs)
 			assert.NoError(t, err, "no error for encode json request")
 			postRequest := httptest.NewRequest(tt.httpMethod, tt.requestPath, &bufReq)
-			postRequest.Header.Add("Content-Type", "application/json")
+			postRequest.Header.Add(HeaderContentType, HeaderApplicationJSONValue)
+			postRequest = postRequest.WithContext(ctx)
 			w := httptest.NewRecorder()
 			batchHandler.Handle(w, postRequest)
 			res := w.Result()
 			require.Equal(t, tt.want.code, res.StatusCode, "Incorrect status code")
-			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"), "Incorrect header content-type")
+			assert.Equal(t, tt.want.contentType, res.Header.Get(HeaderContentType), "Incorrect header content-type")
 
-			if res.Header.Get("Content-Type") == "application/json" {
+			if res.Header.Get(HeaderContentType) == HeaderApplicationJSONValue {
 				var shortedUrls []ShortenRowResponse
 				err := json.NewDecoder(res.Body).Decode(&shortedUrls)
 				assert.NoError(t, err, "no error for decode json response")

@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	m "github.com/VladSnap/shortener/internal/handlers/mocks"
+	"github.com/VladSnap/shortener/internal/services"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -118,14 +121,23 @@ func TestGetHandler(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockService := NewMockShorterService(ctrl)
+	mockService := m.NewMockShorterService(ctrl)
 	getHandler := NewGetHandler(mockService)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockService.EXPECT().GetURL(tt.id).Return(tt.url, nil).AnyTimes()
+			var slink *services.ShortedLink
+			if tt.url == "" {
+				slink = nil
+			} else {
+				slink = &services.ShortedLink{OriginalURL: tt.url}
+			}
+			mockService.EXPECT().GetURL(ctx, tt.id).
+				Return(slink, nil).
+				AnyTimes()
 
 			request := httptest.NewRequest(tt.httpMethod, tt.requestPath, http.NoBody)
 			request.SetPathValue("id", tt.id)
@@ -139,7 +151,7 @@ func TestGetHandler(t *testing.T) {
 			err = res.Body.Close()
 			assert.NoError(t, err, "no error for close response body")
 
-			assert.Equal(t, tt.want.contentType, res.Header.Get("Content-Type"))
+			assert.Equal(t, tt.want.contentType, res.Header.Get(HeaderContentType))
 			assert.Equal(t, tt.url, res.Header.Get("Location"))
 			assert.NotEmpty(t, string(resBody))
 		})

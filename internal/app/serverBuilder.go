@@ -37,12 +37,19 @@ func CreateServer(opts *config.Options, resMng *services.ResourceManager) (Short
 	}
 
 	shorterService := services.NewNaiveShorterService(shortLinkRepo)
+	deleteWorker := handlers.NewDeleteWorker(shorterService)
+	resMng.Register(deleteWorker.Close)
+	deleteWorker.RunWork()
+
 	postHandler := handlers.NewPostHandler(shorterService, opts.BaseURL)
 	getHandler := handlers.NewGetHandler(shorterService)
 	shortenHandler := handlers.NewShortenHandler(shorterService, opts.BaseURL)
 	pingHandler := handlers.NewGetPingHandler(opts)
 	batchHandler := handlers.NewBatchHandler(shorterService, opts.BaseURL)
+	urlsHandler := handlers.NewUrlsHandler(shorterService, opts.BaseURL)
+	deleteHandler := handlers.NewDeleteHandler(deleteWorker)
 
-	server := NewChiShortenerServer(opts, postHandler, getHandler, shortenHandler, pingHandler, batchHandler)
+	server := NewChiShortenerServer(opts, postHandler, getHandler, shortenHandler,
+		pingHandler, batchHandler, urlsHandler, deleteHandler)
 	return server, nil
 }

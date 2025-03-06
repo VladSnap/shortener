@@ -16,7 +16,7 @@ func NewShortLinkRepo() *InMemoryShortLinkRepo {
 	return repo
 }
 
-func (repo *InMemoryShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error) {
+func (repo *InMemoryShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData) (*data.ShortLinkData, error) {
 	repo.links[link.ShortURL] = link
 	return link, nil
 }
@@ -29,6 +29,21 @@ func (repo *InMemoryShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	return links, nil
 }
 
-func (repo *InMemoryShortLinkRepo) GetURL(shortID string) (*data.ShortLinkData, error) {
+func (repo *InMemoryShortLinkRepo) Get(ctx context.Context, shortID string) (*data.ShortLinkData, error) {
 	return repo.links[shortID], nil
+}
+
+func (repo *InMemoryShortLinkRepo) GetAllByUserID(ctx context.Context, userID string) (
+	[]*data.ShortLinkData, error) {
+	return make([]*data.ShortLinkData, 0), nil
+}
+
+func (repo *InMemoryShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error {
+	for _, sid := range shortIDs {
+		link := repo.links[sid.ShortURL]
+		if link.UserID == sid.UserID {
+			link.IsDeleted = true
+		}
+	}
+	return nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/helpers"
 	"github.com/VladSnap/shortener/internal/log"
+	"golang.org/x/exp/maps"
 )
 
 type FileShortLinkRepo struct {
@@ -37,7 +38,8 @@ func NewFileShortLinkRepo(fileStoragePath string) (*FileShortLinkRepo, error) {
 	return repo, nil
 }
 
-func (repo *FileShortLinkRepo) CreateShortLink(link *data.ShortLinkData) (*data.ShortLinkData, error) {
+func (repo *FileShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData) (
+	*data.ShortLinkData, error) {
 	repo.links[link.ShortURL] = link
 	err := repo.writeLink(link)
 	if err != nil {
@@ -61,9 +63,43 @@ func (repo *FileShortLinkRepo) AddBatch(ctx context.Context, links []*data.Short
 	return links, nil
 }
 
-func (repo *FileShortLinkRepo) GetURL(shortID string) (*data.ShortLinkData, error) {
+func (repo *FileShortLinkRepo) Get(ctx context.Context, shortID string) (*data.ShortLinkData, error) {
 	link := repo.links[shortID]
 	return link, nil
+}
+
+func (repo *FileShortLinkRepo) GetAllByUserID(ctx context.Context, userID string) (
+	[]*data.ShortLinkData, error) {
+	var links []*data.ShortLinkData
+
+	for _, l := range repo.links {
+		if l.UserID == userID {
+			links = append(links, l)
+		}
+	}
+
+	return links, nil
+}
+
+func (repo *FileShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error {
+	// Сначала обновляем записи в мемори кэше.
+	for _, sid := range shortIDs {
+		link := repo.links[sid.ShortURL]
+		if link.UserID == sid.UserID {
+			link.IsDeleted = true
+		}
+	}
+	// Удаляем содержимое файла для перезаписи.
+	err := repo.storageFile.Truncate(0)
+	if err != nil {
+		return fmt.Errorf("failed truncate file storage: %w", err)
+	}
+	// Перезаписываем содержимое файла, чтобы проставить флаг is_deleted.
+	_, err = repo.AddBatch(ctx, maps.Values(repo.links))
+	if err != nil {
+		return fmt.Errorf("failed rewrite file after batch delete: %w", err)
+	}
+	return nil
 }
 
 func (repo *FileShortLinkRepo) Close() error {

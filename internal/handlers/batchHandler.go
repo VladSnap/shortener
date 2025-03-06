@@ -2,14 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/services"
-	urlverifier "github.com/davidmytton/url-verifier"
+	"github.com/VladSnap/shortener/internal/validation"
 )
 
 type ShortenRowRequest struct {
@@ -40,9 +40,9 @@ func (handler *BatchHandler) Handle(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	ct := req.Header.Get("content-type")
+	ct := req.Header.Get(HeaderContentType)
 
-	if !strings.Contains(ct, HeaderApplicationJSON) && !strings.Contains(ct, HeaderApplicationXgzip) {
+	if !strings.Contains(ct, HeaderApplicationJSONValue) && !strings.Contains(ct, HeaderApplicationXgzipValue) {
 		http.Error(res, "Incorrect content-type:"+ct, http.StatusBadRequest)
 		return
 	}
@@ -56,7 +56,9 @@ func (handler *BatchHandler) Handle(res http.ResponseWriter, req *http.Request) 
 
 	links := make([]*services.OriginalLink, 0, len(requestRows))
 	for _, r := range requestRows {
-		if err := validateRequestRow(r); err != nil {
+		r.OriginalURL = strings.TrimSuffix(r.OriginalURL, "\r")
+		r.OriginalURL = strings.TrimSuffix(r.OriginalURL, "\n")
+		if err := validation.ValidateURL(r.OriginalURL, "OriginalURL"); err != nil {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -73,7 +75,11 @@ func (handler *BatchHandler) Handle(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	shortedLinks, err := handler.service.CreateShortLinkBatch(links)
+	userID := ""
+	if value, ok := req.Context().Value(constants.UserIDContextKey).(string); ok {
+		userID = value
+	}
+	shortedLinks, err := handler.service.CreateShortLinkBatch(req.Context(), links, userID)
 
 	if err != nil {
 		http.Error(res, fmt.Errorf("failed CreateShortLinkBatch: %w", err).Error(), http.StatusInternalServerError)
@@ -90,7 +96,7 @@ func (handler *BatchHandler) Handle(res http.ResponseWriter, req *http.Request) 
 		responseRows = append(responseRows, rr)
 	}
 
-	res.Header().Add("Content-Type", "application/json")
+	res.Header().Add(HeaderContentType, HeaderApplicationJSONValue)
 	res.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(res).Encode(responseRows)
 
@@ -98,20 +104,4 @@ func (handler *BatchHandler) Handle(res http.ResponseWriter, req *http.Request) 
 		log.Zap.Errorf(ErrFailedWriteToResponse, err)
 		return
 	}
-}
-
-func validateRequestRow(rqRow ShortenRowRequest) error {
-	if rqRow.OriginalURL == "" {
-		return errors.New("required url")
-	}
-
-	rqRow.OriginalURL = strings.TrimSuffix(rqRow.OriginalURL, "\r")
-	rqRow.OriginalURL = strings.TrimSuffix(rqRow.OriginalURL, "\n")
-	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(rqRow.OriginalURL)
-
-	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
-		return errors.New("originalURL verify error")
-	}
-
-	return nil
 }
