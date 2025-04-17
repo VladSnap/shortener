@@ -8,6 +8,7 @@ import (
 	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/validation"
+	"go.uber.org/zap"
 )
 
 type ShortenRequest struct {
@@ -84,7 +85,7 @@ func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request
 	err = json.NewEncoder(res).Encode(result)
 
 	if err != nil {
-		log.Zap.Errorf(ErrFailedWriteToResponse, err)
+		log.Zap.Error(ErrFailedWriteToResponse, zap.Error(err))
 		return
 	}
 }

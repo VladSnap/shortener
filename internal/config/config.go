@@ -6,6 +6,8 @@ import (
 
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/caarlos0/env/v6"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Options struct {
@@ -13,6 +15,14 @@ type Options struct {
 	BaseURL            string `env:"BASE_URL"`          // base url for short url
 	FileStoragePath    string `env:"FILE_STORAGE_PATH"` // file path to storage all shorten url
 	DataBaseConnString string `env:"DATABASE_DSN"`      // database connection string
+}
+
+func (opts *Options) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	enc.AddString("ListenAddress", opts.ListenAddress)
+	enc.AddString("BaseURL", opts.BaseURL)
+	enc.AddString("FileStoragePath", opts.FileStoragePath)
+	enc.AddString("DataBaseConnString", opts.DataBaseConnString)
+	return nil
 }
 
 type ConfigValidater interface {
@@ -29,7 +39,7 @@ func LoadConfig(validater ConfigValidater) (*Options, error) {
 		return nil, err
 	}
 
-	log.Zap.Infof("Config loaded: %+v\n", opts)
+	log.Zap.Info("Config loaded", zap.Object("config", opts))
 	return opts, nil
 }
 

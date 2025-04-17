@@ -14,6 +14,7 @@ import (
 	"github.com/VladSnap/shortener/internal/middlewares"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"go.uber.org/zap"
 )
 
 type Handler interface {
@@ -67,7 +68,7 @@ func (server *ChiShortenerServer) RunServer() error {
 
 		log.Zap.Info("Termination signal received. Stopping server....")
 		if err := serv.Shutdown(context.Background()); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Zap.Error("Error while stopping the server: %v\n", err)
+			log.Zap.Error("Error while stopping the server", zap.Error(err))
 		}
 	}()
 	// Запускаем прослушивание запросов.
@@ -96,5 +97,7 @@ func (server *ChiShortenerServer) initServer() *chi.Mux {
 		r.Get("/api/user/urls", server.urlsHandler.Handle)
 		r.Delete("/api/user/urls", server.deleteHandler.Handle)
 	})
+
+	r.Handle("/debug/pprof/*", http.DefaultServeMux)
 	return r
 }

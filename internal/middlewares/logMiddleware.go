@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/VladSnap/shortener/internal/log"
+	"go.uber.org/zap"
 )
 
 type (
@@ -42,12 +43,10 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 
 func LogMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Zap.Infof("Request %v %v", r.Method, r.RequestURI)
-		headersLog := ""
+		rqHeaders := ""
 		for k, v := range r.Header {
-			headersLog += fmt.Sprintf("%s: %v | ", k, v)
+			rqHeaders += fmt.Sprintf("%s: %v | ", k, v)
 		}
-		log.Zap.Infof("Headers: %s", headersLog)
 		// Перед началом выполнения функции сохраняем текущее время.
 		start := time.Now()
 
@@ -59,24 +58,27 @@ func LogMiddleware(next http.Handler) http.Handler {
 			ResponseWriter: w, // Встраиваем оригинальный http.ResponseWriter.
 			responseData:   responseData,
 		}
+		var duration time.Duration
+		rsHeaders := ""
+
+		defer func() {
+			duration = time.Since(start)
+			for k, v := range w.Header() {
+				rsHeaders += fmt.Sprintf("%s: %v | ", k, v)
+			}
+			log.Zap.Info("Request",
+				zap.String("path", r.Method+" "+r.RequestURI),
+				zap.Int("status", responseData.status),
+				zap.Duration("duration", duration),
+				zap.Int("byte_size", responseData.size),
+				zap.String("request_headers", rqHeaders),
+				zap.String("response_headers", rsHeaders),
+				zap.String("data", responseData.data),
+			)
+		}()
 
 		// Вызываем следующий обработчик.
 		next.ServeHTTP(&lw, r)
 		// После завершения замеряем время выполнения запроса.
-		duration := time.Since(start)
-
-		headersLog = ""
-		for k, v := range w.Header() {
-			headersLog += fmt.Sprintf("%s: %v | ", k, v)
-		}
-
-		log.Zap.Infoln(
-			"Response", r.Method, r.RequestURI,
-			"status:", responseData.status, // Получаем перехваченный код статуса ответа.
-			"duration:", duration.Milliseconds(), "ms",
-			"size:", responseData.size, "bytes", // Получаем перехваченный размер ответа.
-			"\nHeaders:", headersLog,
-			"\nData:", "'"+responseData.data+"'",
-		)
 	})
 }

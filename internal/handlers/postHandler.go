@@ -8,6 +8,7 @@ import (
 	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/validation"
+	"go.uber.org/zap"
 )
 
 type PostHandler struct {
@@ -73,7 +74,7 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	_, err = res.Write([]byte(handler.baseURL + "/" + shortLink.URL))
 
 	if err != nil {
-		log.Zap.Errorf(ErrFailedWriteToResponse, err)
+		log.Zap.Error(ErrFailedWriteToResponse, zap.Error(err))
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}

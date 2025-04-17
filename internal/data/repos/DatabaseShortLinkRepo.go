@@ -8,6 +8,7 @@ import (
 
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/log"
+	"go.uber.org/zap"
 )
 
 type DatabaseShortLinkRepo struct {
@@ -57,7 +58,7 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 		if !isCommited {
 			err := tx.Rollback()
 			if err != nil {
-				log.Zap.Errorf("failed Rollback: %w", err)
+				log.Zap.Error("failed Rollback", zap.Error(err))
 			}
 		}
 	}()
@@ -71,7 +72,7 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	defer func() {
 		err := stmt.Close()
 		if err != nil {
-			log.Zap.Errorf("failed stmt Close: %w", err)
+			log.Zap.Error("failed stmt Close", zap.Error(err))
 		}
 	}()
 
@@ -118,7 +119,7 @@ func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID st
 	defer func() {
 		err := rows.Close()
 		if err != nil {
-			log.Zap.Errorf("failed rows Close: %w", err)
+			log.Zap.Error("failed rows Close", zap.Error(err))
 		}
 	}()
 
@@ -135,7 +136,7 @@ func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID st
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Zap.Errorf("last error encountered by Rows.Scan: %w", err)
+		log.Zap.Error("last error encountered by Rows.Scan", zap.Error(err))
 	}
 	return links, nil
 }
@@ -150,7 +151,7 @@ func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []d
 		if !isCommited {
 			err := tx.Rollback()
 			if err != nil {
-				log.Zap.Errorf("failed Rollback: %w", err)
+				log.Zap.Error("failed Rollback", zap.Error(err))
 			}
 		}
 	}()
@@ -163,7 +164,7 @@ func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []d
 	defer func() {
 		err := stmt.Close()
 		if err != nil {
-			log.Zap.Errorf("failed stmt Close: %w", err)
+			log.Zap.Error("failed stmt Close", zap.Error(err))
 		}
 	}()
 

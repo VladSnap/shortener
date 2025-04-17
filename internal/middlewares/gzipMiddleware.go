@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/VladSnap/shortener/internal/log"
+	"go.uber.org/zap"
 )
 
 var gzipContentTypes *[]string = &[]string{"application/json", "text/html"}
@@ -78,7 +79,7 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			defer func() {
 				err := gzReader.Close()
 				if err != nil {
-					log.Zap.Error("failed gzip reader close: %w", err)
+					log.Zap.Error("failed gzip reader close", zap.Error(err))
 				}
 			}()
 		}
@@ -94,7 +95,7 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			defer func() {
 				err := gzipWritterWrap.Close()
 				if err != nil {
-					log.Zap.Error("failed gzip writer close: %w", err)
+					log.Zap.Error("failed gzip writer close", zap.Error(err))
 				}
 			}()
 		}

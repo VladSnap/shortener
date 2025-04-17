@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	_ "net/http/pprof" // подключаем пакет pprof
+
 	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/services"
 	"github.com/VladSnap/shortener/internal/validation"

@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var Zap *zap.SugaredLogger
+var Zap *zap.Logger
 var logFile *os.File
 
 func init() {
@@ -20,7 +20,7 @@ func init() {
 			panic("cannot initialize zap logger")
 		}
 
-		Zap = logger.Sugar()
+		Zap = logger
 		return
 	}
 
@@ -43,7 +43,7 @@ func init() {
 	// Создаем логгер.
 	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	// Используем SugaredLogger для удобства.
-	Zap = logger.Sugar()
+	Zap = logger
 }
 
 func Close() error {

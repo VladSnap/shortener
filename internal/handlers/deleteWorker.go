@@ -6,6 +6,7 @@ import (
 
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/services"
+	"go.uber.org/zap"
 )
 
 // Эти константы нужны, чтобы линтер не ругался на магические числа. В конфиг не вижу смысла выносить это.
@@ -43,7 +44,7 @@ func (worker *DeleterWorkerImpl) RunWork() {
 
 				err := worker.shorterService.DeleteBatch(context.Background(), worker.buffer)
 				if err != nil {
-					log.Zap.Errorf("failed DeleteBatch: %w", err)
+					log.Zap.Error("failed DeleteBatch", zap.Error(err))
 					continue
 				}
 

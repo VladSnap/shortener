@@ -9,6 +9,7 @@ import (
 	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {
@@ -39,7 +40,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 func handleMissingAuthCookie(w http.ResponseWriter) string {
 	userID, err := setNewAuthCookie(w)
 	if err != nil {
-		log.Zap.Warnf("failed setNewAuthCookie: %w", err)
+		log.Zap.Warn("failed setNewAuthCookie", zap.Error(err))
 	}
 
 	return userID
@@ -47,10 +48,10 @@ func handleMissingAuthCookie(w http.ResponseWriter) string {
 
 func handleUnauthorized(w http.ResponseWriter, authCookie *http.Cookie) bool {
 	if _, err := auth.VerifySignCookie(authCookie.Value); err != nil {
-		log.Zap.Warnf("failed verifySignCookie: %w", err)
+		log.Zap.Warn("failed verifySignCookie", zap.Error(err))
 		_, err = setNewAuthCookie(w)
 		if err != nil {
-			log.Zap.Warnf("failed setNewAuthCookie: %w", err)
+			log.Zap.Warn("failed setNewAuthCookie", zap.Error(err))
 		}
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return false
@@ -61,7 +62,7 @@ func handleUnauthorized(w http.ResponseWriter, authCookie *http.Cookie) bool {
 func handleAuthCookie(w http.ResponseWriter, authCookie *http.Cookie) (*auth.CookieAuthData, bool) {
 	authData, err := auth.DecodeCookie(authCookie.Value)
 	if err != nil {
-		log.Zap.Warnf("failed decodeCookie: %w", err)
+		log.Zap.Warn("failed decodeCookie", zap.Error(err))
 		http.Error(w, "Not decoded cookie: %w", http.StatusInternalServerError)
 		return nil, false
 	}
