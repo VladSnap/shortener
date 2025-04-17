@@ -3,31 +3,40 @@ package validation
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/VladSnap/shortener/internal/constants"
-	urlverifier "github.com/davidmytton/url-verifier"
 )
 
-func ValidateShortURL(url string) error {
-	if url == "" {
+func ValidateShortURL(inputURL string) error {
+	if inputURL == "" {
 		return errors.New("shortURL should not be empty")
 	}
-	if utf8.RuneCountInString(url) != constants.ShortIDLength {
+	if utf8.RuneCountInString(inputURL) != constants.ShortIDLength {
 		return errors.New("shortURL length should be 8")
 	}
 	return nil
 }
 
-func ValidateURL(url string, paramName string) error {
-	if url == "" {
+func ValidateURL(inputURL string, paramName string) error {
+	// Проверяем, что строка не пустая
+	if inputURL == "" {
 		return fmt.Errorf("required %s", paramName)
 	}
-	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(url)
-	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
+
+	// Добавляем префикс "http://" если его нет, чтобы избежать ошибок парсинга
+	if !strings.Contains(inputURL, "://") {
+		inputURL = "http://" + inputURL
+	}
+
+	// Парсим URL
+	parsedURL, err := url.ParseRequestURI(inputURL)
+	if err != nil || parsedURL.Host == "" {
 		return fmt.Errorf("%s verify error", paramName)
 	}
+
 	return nil
 }
 
