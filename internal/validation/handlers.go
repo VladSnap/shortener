@@ -25,12 +25,12 @@ func ValidateURL(inputURL string, paramName string) error {
 	if inputURL == "" {
 		return fmt.Errorf("required %s", paramName)
 	}
-
-	// Добавляем префикс "http://" если его нет, чтобы избежать ошибок парсинга
-	if !strings.Contains(inputURL, "://") {
-		inputURL = "http://" + inputURL
+	if !strings.Contains(inputURL, "http") {
+		return fmt.Errorf("%s verify error", paramName)
 	}
-
+	if !strings.Contains(inputURL, "://") {
+		return fmt.Errorf("%s verify error", paramName)
+	}
 	// Парсим URL
 	parsedURL, err := url.ParseRequestURI(inputURL)
 	if err != nil || parsedURL.Host == "" {
