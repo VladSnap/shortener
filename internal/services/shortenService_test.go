@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"testing"
 
 	"github.com/VladSnap/shortener/internal/constants"
@@ -22,7 +21,7 @@ func TestNaiveShortenService_CreateShortLink(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockRepo := NewMockShortLinkRepo(ctrl)
@@ -33,7 +32,7 @@ func TestNaiveShortenService_CreateShortLink(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			retLink := getNewShortLink("tttttttt", tt.sourceURL)
 			mockRepo.EXPECT().Add(ctx, gomock.Any()).Return(retLink, nil)
-			result, err := service.CreateShortLink(context.Background(), tt.sourceURL, userID)
+			result, err := service.CreateShortLink(t.Context(), tt.sourceURL, userID)
 
 			assert.Nil(t, err)
 			assert.NotNil(t, result)
@@ -67,7 +66,7 @@ func TestNaiveShortenService_GetURL(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockRepo := NewMockShortLinkRepo(ctrl)
@@ -77,7 +76,7 @@ func TestNaiveShortenService_GetURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			retLink := getNewShortLink(tt.shortID, tt.want.fullURL)
 			mockRepo.EXPECT().Get(ctx, tt.shortID).Return(retLink, nil)
-			result, err := service.GetURL(context.Background(), tt.shortID)
+			result, err := service.GetURL(t.Context(), tt.shortID)
 			assert.NoError(t, err, "no expect error get url")
 			assert.Equal(t, tt.want.fullURL, result.OriginalURL)
 		})

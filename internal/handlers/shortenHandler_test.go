@@ -97,7 +97,7 @@ func TestShortenHandler(t *testing.T) {
 	handler := NewShortenHandler(mockService, baseURL)
 	ret := &services.ShortedLink{URL: ""}
 	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
-	ctx := context.WithValue(context.Background(), constants.UserIDContextKey, userID)
+	ctx := context.WithValue(t.Context(), constants.UserIDContextKey, userID)
 	mockService.EXPECT().CreateShortLink(ctx, "http://test6.url", userID).
 		Return(ret, errors.New("random fail")).AnyTimes()
 

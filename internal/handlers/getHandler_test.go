@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -121,7 +120,7 @@ func TestGetHandler(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockService := m.NewMockShorterService(ctrl)

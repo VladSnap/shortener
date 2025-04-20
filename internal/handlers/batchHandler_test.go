@@ -68,7 +68,7 @@ func TestBatchHandler_Handle(t *testing.T) {
 	mockService := m.NewMockShorterService(ctrl)
 	batchHandler := NewBatchHandler(mockService, baseURL)
 	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
-	ctx := context.WithValue(context.Background(), constants.UserIDContextKey, userID)
+	ctx := context.WithValue(t.Context(), constants.UserIDContextKey, userID)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

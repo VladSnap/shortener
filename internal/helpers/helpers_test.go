@@ -5,7 +5,7 @@ import "testing"
 const randStringRues int = 8
 
 func BenchmarkRandStringRunes(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, _ = RandStringRunes(randStringRues)
 	}
 }
