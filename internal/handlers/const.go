@@ -1,5 +1,6 @@
 package handlers
 
+// Константы http заголовков и текста ошибок.
 const (
 	// ErrFailedWriteToResponse - Ошибка записи ответа.
 	ErrFailedWriteToResponse = "failed write to response: %w"

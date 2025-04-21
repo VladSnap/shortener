@@ -14,7 +14,9 @@ import (
 
 var endpoint string = "http://localhost:8080/"
 
+// ShortenRequest - Структура запроса сокращения ссылки.
 type ShortenRequest struct {
+	// URL - Оригинальная ссылка.
 	URL string `json:"url"`
 }
 
