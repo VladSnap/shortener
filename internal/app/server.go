@@ -17,14 +17,19 @@ import (
 	"go.uber.org/zap"
 )
 
+// Handler - Интерфейс обработчика http запросов.
 type Handler interface {
+	// Handle - Обработка запроса.
 	Handle(res http.ResponseWriter, req *http.Request)
 }
 
+// ShortenerServer - Интерфейс сервера сокращателя ссылок.
 type ShortenerServer interface {
+	// RunServer - Запускает сервер.
 	RunServer() error
 }
 
+// ChiShortenerServer - Импоементация сервера сокращателя ссылок ShortenerServer.
 type ChiShortenerServer struct {
 	opts           *config.Options
 	postHandler    Handler
@@ -36,6 +41,7 @@ type ChiShortenerServer struct {
 	deleteHandler  Handler
 }
 
+// NewChiShortenerServer - Создает новую структуру ChiShortenerServer с указателем.
 func NewChiShortenerServer(opts *config.Options,
 	postHandler Handler,
 	getHandler Handler,
@@ -56,6 +62,7 @@ func NewChiShortenerServer(opts *config.Options,
 	return server
 }
 
+// RunServer - Запускает сервер.
 func (server *ChiShortenerServer) RunServer() error {
 	var httpListener = server.initServer()
 	// Создаем сервер.

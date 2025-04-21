@@ -24,6 +24,7 @@ type (
 	}
 )
 
+// Write - Реализует метод записи тела ответа для обертки логирования.
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	// Записываем ответ, используя оригинальный http.ResponseWriter.
 	size, err := r.ResponseWriter.Write(b)
@@ -35,12 +36,14 @@ func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	return size, nil
 }
 
+// WriteHeader - Реализует метод записи заголовка для обертки логирования.
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	// Записываем код статуса, используя оригинальный http.ResponseWriter.
 	r.ResponseWriter.WriteHeader(statusCode)
 	r.responseData.status = statusCode // Захватываем код статуса.
 }
 
+// LogMiddleware - Мидлварь для логирования запросов и ответов.
 func LogMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rqHeaders := ""

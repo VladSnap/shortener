@@ -19,6 +19,7 @@ type gzipWriter struct {
 	isCompressed bool
 }
 
+// Write - Записать тело ответа.
 func (w *gzipWriter) Write(b []byte) (int, error) {
 	if w.isCompressed {
 		// Сжимаем ответ, если у него подходящий тип контента
@@ -37,6 +38,7 @@ func (w *gzipWriter) Write(b []byte) (int, error) {
 	return bytes, nil
 }
 
+// WriteHeader - Записать заголовок.
 func (w *gzipWriter) WriteHeader(statusCode int) {
 	ct := w.Header().Get("Content-Type")
 
@@ -49,6 +51,7 @@ func (w *gzipWriter) WriteHeader(statusCode int) {
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 
+// Close - Закрывает Writer.
 func (w *gzipWriter) Close() error {
 	if w.isCompressed {
 		err := w.zw.Close()
@@ -60,6 +63,7 @@ func (w *gzipWriter) Close() error {
 	return nil
 }
 
+// GzipMiddleware - Мидлварь для распаковки сжатого ответа и сжатия ответа.
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w

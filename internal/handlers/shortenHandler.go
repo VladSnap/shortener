@@ -11,19 +11,25 @@ import (
 	"go.uber.org/zap"
 )
 
+// ShortenRequest - Структура запроса для ShortenHandler.
 type ShortenRequest struct {
+	// URL - Оригинальный URL который требуется сократить.
 	URL string `json:"url"`
 }
 
+// ShortenResponse - Структура ответа для ShortenHandler.
 type ShortenResponse struct {
+	// Result - Результат в виде сокращенной ссылки.
 	Result string `json:"result"`
 }
 
+// ShortenHandler - Обработчик запроса сокращения одной ссылки в формате json.
 type ShortenHandler struct {
 	service ShorterService
 	baseURL string
 }
 
+// NewShortenHandler - Создает новую структуру ShortenHandler с указателем.
 func NewShortenHandler(service ShorterService, baseURL string) *ShortenHandler {
 	handler := new(ShortenHandler)
 	handler.service = service
@@ -31,6 +37,7 @@ func NewShortenHandler(service ShorterService, baseURL string) *ShortenHandler {
 	return handler
 }
 
+// Handle - Обрабатывает входящий запрос.
 func (handler *ShortenHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(res, "Http method not POST", http.StatusBadRequest)

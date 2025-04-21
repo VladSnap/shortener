@@ -11,11 +11,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// PostHandler - Обработчик запроса сокращения одной ссылки в формате text/plain.
 type PostHandler struct {
 	service ShorterService
 	baseURL string
 }
 
+// NewPostHandler - Создает новую структуру PostHandler с указателем.
 func NewPostHandler(service ShorterService, baseURL string) *PostHandler {
 	handler := new(PostHandler)
 	handler.service = service
@@ -23,6 +25,7 @@ func NewPostHandler(service ShorterService, baseURL string) *PostHandler {
 	return handler
 }
 
+// Handle - Обрабатывает входящий запрос.
 func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(res, "Http method not POST", http.StatusBadRequest)

@@ -16,11 +16,13 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+// FileShortLinkRepo - Репозиторий для доступа к файловому хранилищу сокращателя ссылок.
 type FileShortLinkRepo struct {
 	links       map[string]*data.ShortLinkData
 	storageFile *os.File
 }
 
+// NewFileShortLinkRepo - Создает новую структуру FileShortLinkRepo с указателем.
 func NewFileShortLinkRepo(fileStoragePath string) (*FileShortLinkRepo, error) {
 	repo := new(FileShortLinkRepo)
 	file, err := createFileStorage(fileStoragePath)
@@ -38,6 +40,7 @@ func NewFileShortLinkRepo(fileStoragePath string) (*FileShortLinkRepo, error) {
 	return repo, nil
 }
 
+// Add - Сохраняет структуру сокращенной ссылки в файле.
 func (repo *FileShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData) (
 	*data.ShortLinkData, error) {
 	repo.links[link.ShortURL] = link
@@ -49,6 +52,7 @@ func (repo *FileShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData
 	return link, nil
 }
 
+// AddBatch - Сохраняет пачку структур сокращенных ссылок в файле.
 func (repo *FileShortLinkRepo) AddBatch(ctx context.Context, links []*data.ShortLinkData) (
 	[]*data.ShortLinkData, error) {
 	for _, link := range links {
@@ -63,11 +67,13 @@ func (repo *FileShortLinkRepo) AddBatch(ctx context.Context, links []*data.Short
 	return links, nil
 }
 
+// Get - Читает полную ссылку по сокращенной ссылке.
 func (repo *FileShortLinkRepo) Get(ctx context.Context, shortID string) (*data.ShortLinkData, error) {
 	link := repo.links[shortID]
 	return link, nil
 }
 
+// GetAllByUserID - Получить все сокращенные ссылки указанного пользователя.
 func (repo *FileShortLinkRepo) GetAllByUserID(ctx context.Context, userID string) (
 	[]*data.ShortLinkData, error) {
 	var links []*data.ShortLinkData
@@ -81,6 +87,7 @@ func (repo *FileShortLinkRepo) GetAllByUserID(ctx context.Context, userID string
 	return links, nil
 }
 
+// DeleteBatch - Удаляет пачку структур сокращенных ссылок в БД.
 func (repo *FileShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error {
 	// Сначала обновляем записи в мемори кэше.
 	for _, sid := range shortIDs {
@@ -102,6 +109,7 @@ func (repo *FileShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []data.
 	return nil
 }
 
+// Close - Закрывает файл.
 func (repo *FileShortLinkRepo) Close() error {
 	err := repo.storageFile.Close()
 	if err != nil {

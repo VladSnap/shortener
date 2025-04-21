@@ -10,6 +10,7 @@ import (
 	"github.com/VladSnap/shortener/internal/constants"
 )
 
+// ValidateShortURL - Валидирует сокращенную ссылку.
 func ValidateShortURL(inputURL string) error {
 	if inputURL == "" {
 		return errors.New("shortURL should not be empty")
@@ -20,6 +21,7 @@ func ValidateShortURL(inputURL string) error {
 	return nil
 }
 
+// ValidateURL - Валидирует оригинальную ссылку.
 func ValidateURL(inputURL string, paramName string) error {
 	// Проверяем, что строка не пустая
 	if inputURL == "" {
@@ -40,6 +42,7 @@ func ValidateURL(inputURL string, paramName string) error {
 	return nil
 }
 
+// ValidatePath - Валидирует path ссылки.
 func ValidatePath(path string) bool {
 	segments := strings.Split(path, "/")
 	return len(segments) == 2 && segments[1] != ""

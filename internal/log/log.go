@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// Zap - Логировщик из пакета go.uber.org/zap. Через него можно писать логи в прилоежение.
 var Zap *zap.Logger
 var logFile *os.File
 
@@ -46,6 +47,7 @@ func init() {
 	Zap = logger
 }
 
+// Close - Закрывает открый файл лога.
 func Close() error {
 	Zap.Info("Logger closing")
 	err := Zap.Sync()

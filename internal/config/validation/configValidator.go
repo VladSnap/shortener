@@ -6,9 +6,11 @@ import (
 	"github.com/VladSnap/shortener/internal/config"
 )
 
+// OptionsValidator - Структура валидатора конфигов.
 type OptionsValidator struct {
 }
 
+// Validate - Проверяет корректность конфига.
 func (vld *OptionsValidator) Validate(opts *config.Options) error {
 	runesBaseURL := []rune(opts.BaseURL)
 

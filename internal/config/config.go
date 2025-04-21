@@ -10,13 +10,19 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// Options - Структура конфига приложения.
 type Options struct {
-	ListenAddress      string `env:"SERVER_ADDRESS"`    // server listen address
-	BaseURL            string `env:"BASE_URL"`          // base url for short url
-	FileStoragePath    string `env:"FILE_STORAGE_PATH"` // file path to storage all shorten url
-	DataBaseConnString string `env:"DATABASE_DSN"`      // database connection string
+	// ListenAddress - Server listen address.
+	ListenAddress string `env:"SERVER_ADDRESS"`
+	// BaseURL - Base url for short url
+	BaseURL string `env:"BASE_URL"`
+	// FileStoragePath - File path to storage all shorten url
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	// DataBaseConnString - Database connection string
+	DataBaseConnString string `env:"DATABASE_DSN"`
 }
 
+// MarshalLogObject - Сериализует структуру конфига для эффективного логирования.
 func (opts *Options) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("ListenAddress", opts.ListenAddress)
 	enc.AddString("BaseURL", opts.BaseURL)
@@ -25,10 +31,12 @@ func (opts *Options) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
+// ConfigValidater - Интерфейс валидатора конфига.
 type ConfigValidater interface {
 	Validate(opts *Options) error
 }
 
+// LoadConfig - Загружает конфигурацию приложения, парсит флаги и переменные окружения.
 func LoadConfig(validater ConfigValidater) (*Options, error) {
 	opts, err := ParseFlags(validater)
 	if err != nil {
@@ -43,6 +51,7 @@ func LoadConfig(validater ConfigValidater) (*Options, error) {
 	return opts, nil
 }
 
+// ParseFlags - Парсит консольные флаги приложения.
 func ParseFlags(validater ConfigValidater) (*Options, error) {
 	opts := new(Options)
 
@@ -62,6 +71,7 @@ func ParseFlags(validater ConfigValidater) (*Options, error) {
 	return opts, nil
 }
 
+// ParseEnvConfig - Парсит переменные окружения.
 func ParseEnvConfig(opts *Options) error {
 	err := env.Parse(opts)
 

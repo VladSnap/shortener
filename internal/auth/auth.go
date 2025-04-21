@@ -11,6 +11,7 @@ import (
 	"strings"
 )
 
+// CookieAuthData - Структура для хранения информации о пользователе в cookie в формате JSON.
 type CookieAuthData struct {
 	UserID string `json:"user_id"`
 }
@@ -20,6 +21,7 @@ const cookieValidSegmentCount int = 2
 // Такое следует хранить в защищенном хранилище, а не в коде или в конфигах.
 var authCookieKey = sha256.Sum256([]byte("kl1jmo;u6hn&*On0jo8f"))
 
+// CreateSignedCookie - Создает безопасную (подписаную) куки.
 func CreateSignedCookie(userID string) (string, error) {
 	data := CookieAuthData{userID}
 	var jsonBuf bytes.Buffer
@@ -39,6 +41,7 @@ func CreateSignedCookie(userID string) (string, error) {
 	return cookie, nil
 }
 
+// VerifySignCookie - Проверяет подпись куки.
 func VerifySignCookie(cookieValue string) (bool, error) {
 	cookieSegments := strings.Split(cookieValue, ".")
 	if len(cookieSegments) != cookieValidSegmentCount {
@@ -62,6 +65,7 @@ func VerifySignCookie(cookieValue string) (bool, error) {
 	return isVerify, nil
 }
 
+// DecodeCookie - Декодирует куки, чтобы далее извлечь из неё структуру CookieAuthData.
 func DecodeCookie(cookieValue string) (*CookieAuthData, error) {
 	cookieSegments := strings.Split(cookieValue, ".")
 	if len(cookieSegments) != cookieValidSegmentCount {

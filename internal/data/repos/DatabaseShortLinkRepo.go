@@ -11,16 +11,19 @@ import (
 	"go.uber.org/zap"
 )
 
+// DatabaseShortLinkRepo - Репозиторий для доступа к БД сокращателя ссылок.
 type DatabaseShortLinkRepo struct {
 	database *data.DatabaseShortener
 }
 
+// NewDatabaseShortLinkRepo - Создает новую структуру DatabaseShortLinkRepo с указателем.
 func NewDatabaseShortLinkRepo(database *data.DatabaseShortener) *DatabaseShortLinkRepo {
 	repo := new(DatabaseShortLinkRepo)
 	repo.database = database
 	return repo
 }
 
+// Add - Сохраняет структуру сокращенной ссылки в БД.
 func (repo *DatabaseShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData) (
 	*data.ShortLinkData, error) {
 	sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url, user_id, is_deleted)" +
@@ -47,6 +50,7 @@ func (repo *DatabaseShortLinkRepo) Add(ctx context.Context, link *data.ShortLink
 	}
 }
 
+// AddBatch - Сохраняет пачку структур сокращенных ссылок в БД.
 func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.ShortLinkData) (
 	[]*data.ShortLinkData, error) {
 	tx, err := repo.database.BeginTx(ctx, nil)
@@ -92,6 +96,7 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	return links, nil
 }
 
+// Get - Читает полную ссылку по сокращенной ссылке.
 func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*data.ShortLinkData, error) {
 	sqlText := `SELECT * FROM public.short_links WHERE short_url = $1`
 	row := repo.database.QueryRowContext(ctx, sqlText, shortID)
@@ -109,6 +114,7 @@ func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*da
 	return &link, nil
 }
 
+// GetAllByUserID - Получить все сокращенные ссылки указанного пользователя.
 func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID string) (
 	[]*data.ShortLinkData, error) {
 	sqlText := `SELECT * FROM public.short_links WHERE user_id = $1`
@@ -141,6 +147,7 @@ func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID st
 	return links, nil
 }
 
+// DeleteBatch - Удаляет пачку структур сокращенных ссылок из БД.
 func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error {
 	tx, err := repo.database.BeginTx(ctx, nil)
 	isCommited := false

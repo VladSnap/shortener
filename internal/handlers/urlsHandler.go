@@ -9,16 +9,21 @@ import (
 	"go.uber.org/zap"
 )
 
+// ShortedLinkResponse - Структура ответа для UrlsHandler.
 type ShortedLinkResponse struct {
+	// OriginalURL - Оригинальный URL который был сокращен.
 	OriginalURL string `json:"original_url"`
-	ShortURL    string `json:"short_url"`
+	// ShortURL - Сокращенная ссылка.
+	ShortURL string `json:"short_url"`
 }
 
+// UrlsHandler - Обработчик запроса чтения сокращенных ссылок пользователя.
 type UrlsHandler struct {
 	service ShorterService
 	baseURL string
 }
 
+// NewUrlsHandler - Создает новую структуру UrlsHandler с указателем.
 func NewUrlsHandler(service ShorterService, baseURL string) *UrlsHandler {
 	handler := new(UrlsHandler)
 	handler.service = service
@@ -26,6 +31,7 @@ func NewUrlsHandler(service ShorterService, baseURL string) *UrlsHandler {
 	return handler
 }
 
+// Handle - Обрабатывает входящий запрос.
 func (handler *UrlsHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(res, "Http method not GET", http.StatusBadRequest)

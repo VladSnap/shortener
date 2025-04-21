@@ -12,16 +12,19 @@ import (
 	"go.uber.org/zap"
 )
 
+// GetPingHandler - Обработчик запроса проверки доступности базы данных.
 type GetPingHandler struct {
 	opts *config.Options
 }
 
+// NewGetPingHandler - Создает новую структуру GetPingHandler с указателем.
 func NewGetPingHandler(opts *config.Options) *GetPingHandler {
 	handler := new(GetPingHandler)
 	handler.opts = opts
 	return handler
 }
 
+// Handle - Обрабатывает входящий запрос.
 func (handler *GetPingHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(res, "Http method not GET", http.StatusBadRequest)

@@ -10,6 +10,7 @@ import (
 	"github.com/VladSnap/shortener/internal/services"
 )
 
+// CreateServer - Создает структуру интерфейса ShortenerServer и создает все зависимости сервера.
 func CreateServer(opts *config.Options, resMng *services.ResourceManager) (ShortenerServer, error) {
 	var shortLinkRepo services.ShortLinkRepo
 

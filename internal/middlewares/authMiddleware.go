@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// AuthMiddleware - Мидлварь для аутентификации и атворизации пользователя.
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authCookie, err := r.Cookie("Auth")
