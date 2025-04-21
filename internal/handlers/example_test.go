@@ -1,3 +1,4 @@
+//nolint:testableexamples // no output this example
 package handlers
 
 import (
