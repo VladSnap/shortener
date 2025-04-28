@@ -58,7 +58,7 @@ func TestBatchHandler_Handle(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "OriginalURL verify error\n",
+				responseBody: "incorrect format OriginalURL: parse \"google.com\": invalid URI for request\n",
 			},
 		},
 	}

@@ -53,7 +53,7 @@ func TestPostHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "req.Body verify error\n",
+				responseBody: "incorrect format req.Body: parse \"google.com\": invalid URI for request\n",
 			},
 		}, {
 			name:        "request body is empty",

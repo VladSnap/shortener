@@ -25,18 +25,16 @@ func ValidateShortURL(inputURL string) error {
 func ValidateURL(inputURL string, paramName string) error {
 	// Проверяем, что строка не пустая
 	if inputURL == "" {
-		return fmt.Errorf("required %s", paramName)
-	}
-	if !strings.Contains(inputURL, "http") {
-		return fmt.Errorf("%s verify error", paramName)
-	}
-	if !strings.Contains(inputURL, "://") {
-		return fmt.Errorf("%s verify error", paramName)
+		return fmt.Errorf("%s can't be empty", paramName)
 	}
 	// Парсим URL
 	parsedURL, err := url.ParseRequestURI(inputURL)
-	if err != nil || parsedURL.Host == "" {
-		return fmt.Errorf("%s verify error", paramName)
+	if err != nil {
+		return fmt.Errorf("incorrect format %s: %w", paramName, err)
+	}
+	// Проверяем наличие схемы и хоста
+	if parsedURL.Scheme == "" || parsedURL.Host == "" {
+		return fmt.Errorf("%s must contain schema and host", paramName)
 	}
 
 	return nil

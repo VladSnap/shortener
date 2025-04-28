@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/VladSnap/shortener/internal/auth"
+	"github.com/VladSnap/shortener/internal/config"
 	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/google/uuid"
@@ -13,33 +14,35 @@ import (
 )
 
 // AuthMiddleware - Мидлварь для аутентификации и атворизации пользователя.
-func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authCookie, err := r.Cookie("Auth")
-		if err != nil {
-			userID := handleMissingAuthCookie(w)
-			r = r.WithContext(context.WithValue(r.Context(), constants.UserIDContextKey, userID))
+func AuthMiddleware(opts *config.Options) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCookie, err := r.Cookie("Auth")
+			if err != nil {
+				userID := handleMissingAuthCookie(w, opts)
+				r = r.WithContext(context.WithValue(r.Context(), constants.UserIDContextKey, userID))
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			if !handleUnauthorized(w, authCookie, opts) {
+				return
+			}
+
+			authData, ok := handleAuthCookie(w, authCookie)
+
+			if !ok {
+				return
+			}
+
+			r = r.WithContext(context.WithValue(r.Context(), constants.UserIDContextKey, authData.UserID))
 			next.ServeHTTP(w, r)
-			return
-		}
-
-		if !handleUnauthorized(w, authCookie) {
-			return
-		}
-
-		authData, ok := handleAuthCookie(w, authCookie)
-
-		if !ok {
-			return
-		}
-
-		r = r.WithContext(context.WithValue(r.Context(), constants.UserIDContextKey, authData.UserID))
-		next.ServeHTTP(w, r)
-	})
+		})
+	}
 }
 
-func handleMissingAuthCookie(w http.ResponseWriter) string {
-	userID, err := setNewAuthCookie(w)
+func handleMissingAuthCookie(w http.ResponseWriter, opts *config.Options) string {
+	userID, err := setNewAuthCookie(w, opts)
 	if err != nil {
 		log.Zap.Warn("failed setNewAuthCookie", zap.Error(err))
 	}
@@ -47,10 +50,10 @@ func handleMissingAuthCookie(w http.ResponseWriter) string {
 	return userID
 }
 
-func handleUnauthorized(w http.ResponseWriter, authCookie *http.Cookie) bool {
-	if _, err := auth.VerifySignCookie(authCookie.Value); err != nil {
+func handleUnauthorized(w http.ResponseWriter, authCookie *http.Cookie, opts *config.Options) bool {
+	if _, err := auth.VerifySignCookie(authCookie.Value, opts.AuthCookieKey); err != nil {
 		log.Zap.Warn("failed verifySignCookie", zap.Error(err))
-		_, err = setNewAuthCookie(w)
+		_, err = setNewAuthCookie(w, opts)
 		if err != nil {
 			log.Zap.Warn("failed setNewAuthCookie", zap.Error(err))
 		}
@@ -70,13 +73,13 @@ func handleAuthCookie(w http.ResponseWriter, authCookie *http.Cookie) (*auth.Coo
 	return authData, true
 }
 
-func setNewAuthCookie(w http.ResponseWriter) (string, error) {
+func setNewAuthCookie(w http.ResponseWriter, opts *config.Options) (string, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return "", fmt.Errorf("failed generate new user id: %w", err)
 	}
 
-	cookieValue, err := auth.CreateSignedCookie(id.String())
+	cookieValue, err := auth.CreateSignedCookie(id.String(), opts.AuthCookieKey)
 	if err != nil {
 		return "", fmt.Errorf("failed createSignedCookie: %w", err)
 	}

@@ -53,7 +53,7 @@ func TestShortenHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "URL verify error\n",
+				responseBody: "incorrect format URL: parse \"google.com\": invalid URI for request\n",
 			},
 		}, {
 			name:        "request body is empty",

@@ -97,7 +97,7 @@ func (server *ChiShortenerServer) initServer() *chi.Mux {
 
 	// Роутинги с аутентификацией.
 	r.Group(func(r chi.Router) {
-		r.Use(middlewares.AuthMiddleware)
+		r.Use(middlewares.AuthMiddleware(server.opts))
 		r.Post("/", server.postHandler.Handle)
 		r.Post("/api/shorten", server.shortenHandler.Handle)
 		r.Post("/api/shorten/batch", server.batchHandler.Handle)
@@ -105,6 +105,8 @@ func (server *ChiShortenerServer) initServer() *chi.Mux {
 		r.Delete("/api/user/urls", server.deleteHandler.Handle)
 	})
 
-	r.Handle("/debug/pprof/*", http.DefaultServeMux)
+	if server.opts.Performance {
+		r.Handle("/debug/pprof/*", http.DefaultServeMux)
+	}
 	return r
 }

@@ -18,5 +18,9 @@ func (vld *OptionsValidator) Validate(opts *config.Options) error {
 		return errors.New("incorrect -b argument, don't put a slash at the end")
 	}
 
+	if opts.AuthCookieKey == "" {
+		return errors.New("incorrect -a argument, it should not be empty")
+	}
+
 	return nil
 }

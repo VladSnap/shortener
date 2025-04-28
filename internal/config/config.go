@@ -20,6 +20,10 @@ type Options struct {
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	// DataBaseConnString - Database connection string
 	DataBaseConnString string `env:"DATABASE_DSN"`
+	// Performance - Enable pprof for performance testing
+	Performance bool
+	// AuthCookieKey - Key for signing auth cookies
+	AuthCookieKey string `env:"AUTH_COOKIE_KEY"`
 }
 
 // MarshalLogObject - Сериализует структуру конфига для эффективного логирования.
@@ -28,6 +32,8 @@ func (opts *Options) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("BaseURL", opts.BaseURL)
 	enc.AddString("FileStoragePath", opts.FileStoragePath)
 	enc.AddString("DataBaseConnString", opts.DataBaseConnString)
+	enc.AddBool("Performance", opts.Performance)
+	enc.AddString("AuthCookieKey", opts.AuthCookieKey)
 	return nil
 }
 
@@ -59,6 +65,8 @@ func ParseFlags(validater ConfigValidater) (*Options, error) {
 	flag.StringVar(&opts.BaseURL, "b", "http://localhost:8080", "base url for short url")
 	flag.StringVar(&opts.FileStoragePath, "f", "", "file path to storage all shorten url")
 	flag.StringVar(&opts.DataBaseConnString, "d", "", "database connection string")
+	flag.BoolVar(&opts.Performance, "p", false, "pprof")
+	flag.StringVar(&opts.AuthCookieKey, "a", "", "key for signing auth cookies")
 
 	flag.Parse()
 
