@@ -20,10 +20,10 @@ type Options struct {
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	// DataBaseConnString - Database connection string
 	DataBaseConnString string `env:"DATABASE_DSN"`
-	// Performance - Enable pprof for performance testing
-	Performance bool
 	// AuthCookieKey - Key for signing auth cookies
 	AuthCookieKey string `env:"AUTH_COOKIE_KEY"`
+	// Performance - Enable pprof for performance testing
+	Performance bool
 }
 
 // MarshalLogObject - Сериализует структуру конфига для эффективного логирования.
