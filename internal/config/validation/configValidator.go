@@ -19,7 +19,7 @@ func (vld *OptionsValidator) Validate(opts *config.Options) error {
 	}
 
 	if opts.AuthCookieKey == "" {
-		return errors.New("incorrect -a argument, it should not be empty")
+		return errors.New("incorrect -k argument, it should not be empty")
 	}
 
 	return nil

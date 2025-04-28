@@ -66,7 +66,7 @@ func ParseFlags(validater ConfigValidater) (*Options, error) {
 	flag.StringVar(&opts.FileStoragePath, "f", "", "file path to storage all shorten url")
 	flag.StringVar(&opts.DataBaseConnString, "d", "", "database connection string")
 	flag.BoolVar(&opts.Performance, "p", false, "pprof")
-	flag.StringVar(&opts.AuthCookieKey, "a", "", "key for signing auth cookies")
+	flag.StringVar(&opts.AuthCookieKey, "k", "", "key for signing auth cookies")
 
 	flag.Parse()
 
