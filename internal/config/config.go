@@ -44,13 +44,17 @@ type ConfigValidater interface {
 
 // LoadConfig - Загружает конфигурацию приложения, парсит флаги и переменные окружения.
 func LoadConfig(validater ConfigValidater) (*Options, error) {
-	opts, err := ParseFlags(validater)
+	opts := ParseFlags(validater)
+
+	err := ParseEnvConfig(opts)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("config env parsing failed: %w", err)
 	}
-	err = ParseEnvConfig(opts)
+
+	err = validater.Validate(opts)
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("config validating failed: %w", err)
 	}
 
 	log.Zap.Info("Config loaded", zap.Object("config", opts))
@@ -58,7 +62,7 @@ func LoadConfig(validater ConfigValidater) (*Options, error) {
 }
 
 // ParseFlags - Парсит консольные флаги приложения.
-func ParseFlags(validater ConfigValidater) (*Options, error) {
+func ParseFlags(validater ConfigValidater) *Options {
 	opts := new(Options)
 
 	flag.StringVar(&opts.ListenAddress, "a", ":8080", "server listen address")
@@ -70,13 +74,7 @@ func ParseFlags(validater ConfigValidater) (*Options, error) {
 
 	flag.Parse()
 
-	err := validater.Validate(opts)
-
-	if err != nil {
-		return nil, fmt.Errorf("config validating failed: %w", err)
-	}
-
-	return opts, nil
+	return opts
 }
 
 // ParseEnvConfig - Парсит переменные окружения.
