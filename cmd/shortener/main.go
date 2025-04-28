@@ -43,7 +43,7 @@ func main() {
 	err = server.RunServer()
 
 	if err != nil {
-		log.Zap.Errorf("failed stop server: %w", err)
+		log.Zap.Error("failed stop server", zap.Error(err))
 	}
 	log.Zap.Info("main.go end")
 }
@@ -55,16 +55,16 @@ func logWorkDir(isPrint bool) {
 
 	dir, err := os.Getwd()
 	if err != nil {
-		log.Zap.Errorf("failed get workdir: %v\n", err)
+		log.Zap.Error("failed get workdir", zap.Error(err))
 		return
 	}
 
-	log.Zap.Infof("workdir: %s\n", dir)
+	log.Zap.Info("workdir", zap.String("path", dir))
 	log.Zap.Info("print all subdirs:")
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		log.Zap.Errorf("failed read workdir: %v\n", err)
+		log.Zap.Error("failed read workdir", zap.Error(err))
 	}
 
 	for _, e := range entries {

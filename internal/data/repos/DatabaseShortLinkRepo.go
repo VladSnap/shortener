@@ -8,18 +8,22 @@ import (
 
 	"github.com/VladSnap/shortener/internal/data"
 	"github.com/VladSnap/shortener/internal/log"
+	"go.uber.org/zap"
 )
 
+// DatabaseShortLinkRepo - Репозиторий для доступа к БД сокращателя ссылок.
 type DatabaseShortLinkRepo struct {
 	database *data.DatabaseShortener
 }
 
+// NewDatabaseShortLinkRepo - Создает новую структуру DatabaseShortLinkRepo с указателем.
 func NewDatabaseShortLinkRepo(database *data.DatabaseShortener) *DatabaseShortLinkRepo {
 	repo := new(DatabaseShortLinkRepo)
 	repo.database = database
 	return repo
 }
 
+// Add - Сохраняет структуру сокращенной ссылки в БД.
 func (repo *DatabaseShortLinkRepo) Add(ctx context.Context, link *data.ShortLinkData) (
 	*data.ShortLinkData, error) {
 	sqlText := "INSERT INTO public.short_links (uuid, short_url, orig_url, user_id, is_deleted)" +
@@ -46,18 +50,19 @@ func (repo *DatabaseShortLinkRepo) Add(ctx context.Context, link *data.ShortLink
 	}
 }
 
+// AddBatch - Сохраняет пачку структур сокращенных ссылок в БД.
 func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.ShortLinkData) (
 	[]*data.ShortLinkData, error) {
 	tx, err := repo.database.BeginTx(ctx, nil)
 	isCommited := false
 	if err != nil {
-		return nil, fmt.Errorf("failed begin db transaction: %w", err)
+		return nil, fmt.Errorf("failed begin db transaction before insert batch operation: %w", err)
 	}
 	defer func() {
 		if !isCommited {
 			err := tx.Rollback()
 			if err != nil {
-				log.Zap.Errorf("failed Rollback: %w", err)
+				log.Zap.Error("unable to rollback transaction after failed insert batch operation", zap.Error(err))
 			}
 		}
 	}()
@@ -71,7 +76,7 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 	defer func() {
 		err := stmt.Close()
 		if err != nil {
-			log.Zap.Errorf("failed stmt Close: %w", err)
+			log.Zap.Error("unable to stmt close after insert batch operation", zap.Error(err))
 		}
 	}()
 
@@ -79,18 +84,19 @@ func (repo *DatabaseShortLinkRepo) AddBatch(ctx context.Context, links []*data.S
 		_, err := stmt.ExecContext(ctx, link.UUID, link.ShortURL, link.OriginalURL,
 			toNullString(link.UserID), link.IsDeleted)
 		if err != nil {
-			return nil, fmt.Errorf("failed exec insert: %w", err)
+			return nil, fmt.Errorf("failed exec insert batch: %w", err)
 		}
 	}
 	err = tx.Commit()
 	if err != nil {
-		return nil, fmt.Errorf("failed commit transaction: %w", err)
+		return nil, fmt.Errorf("failed commit insert batch transaction: %w", err)
 	}
 	isCommited = true
 
 	return links, nil
 }
 
+// Get - Читает полную ссылку по сокращенной ссылке.
 func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*data.ShortLinkData, error) {
 	sqlText := `SELECT * FROM public.short_links WHERE short_url = $1`
 	row := repo.database.QueryRowContext(ctx, sqlText, shortID)
@@ -108,6 +114,7 @@ func (repo *DatabaseShortLinkRepo) Get(ctx context.Context, shortID string) (*da
 	return &link, nil
 }
 
+// GetAllByUserID - Получить все сокращенные ссылки указанного пользователя.
 func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID string) (
 	[]*data.ShortLinkData, error) {
 	sqlText := `SELECT * FROM public.short_links WHERE user_id = $1`
@@ -118,7 +125,7 @@ func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID st
 	defer func() {
 		err := rows.Close()
 		if err != nil {
-			log.Zap.Errorf("failed rows Close: %w", err)
+			log.Zap.Error("failed rows close for select request", zap.Error(err))
 		}
 	}()
 
@@ -135,22 +142,23 @@ func (repo *DatabaseShortLinkRepo) GetAllByUserID(ctx context.Context, userID st
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Zap.Errorf("last error encountered by Rows.Scan: %w", err)
+		log.Zap.Error("last error encountered by Rows.Scan", zap.Error(err))
 	}
 	return links, nil
 }
 
+// DeleteBatch - Удаляет пачку структур сокращенных ссылок из БД.
 func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error {
 	tx, err := repo.database.BeginTx(ctx, nil)
 	isCommited := false
 	if err != nil {
-		return fmt.Errorf("failed begin db transaction: %w", err)
+		return fmt.Errorf("failed begin db transaction before update batch operation: %w", err)
 	}
 	defer func() {
 		if !isCommited {
 			err := tx.Rollback()
 			if err != nil {
-				log.Zap.Errorf("failed Rollback: %w", err)
+				log.Zap.Error("unable to rollback transaction after failed update batch operation", zap.Error(err))
 			}
 		}
 	}()
@@ -158,24 +166,24 @@ func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []d
 	stmt, err := tx.PrepareContext(ctx,
 		"UPDATE public.short_links SET is_deleted=true WHERE is_deleted != true and short_url = $1 and user_id = $2")
 	if err != nil {
-		return fmt.Errorf("failed prepare update: %w", err)
+		return fmt.Errorf("failed prepare batch update: %w", err)
 	}
 	defer func() {
 		err := stmt.Close()
 		if err != nil {
-			log.Zap.Errorf("failed stmt Close: %w", err)
+			log.Zap.Error("unable to stmt close after failed update batch operation", zap.Error(err))
 		}
 	}()
 
 	for _, shortID := range shortIDs {
 		_, err := stmt.ExecContext(ctx, shortID.ShortURL, shortID.UserID)
 		if err != nil {
-			return fmt.Errorf("failed exec update: %w", err)
+			return fmt.Errorf("failed exec batch update: %w", err)
 		}
 	}
 	err = tx.Commit()
 	if err != nil {
-		return fmt.Errorf("failed commit transaction: %w", err)
+		return fmt.Errorf("failed commit batch update transaction: %w", err)
 	}
 	isCommited = true
 

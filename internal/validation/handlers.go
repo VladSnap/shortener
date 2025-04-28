@@ -3,34 +3,44 @@ package validation
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/VladSnap/shortener/internal/constants"
-	urlverifier "github.com/davidmytton/url-verifier"
 )
 
-func ValidateShortURL(url string) error {
-	if url == "" {
+// ValidateShortURL - Валидирует сокращенную ссылку.
+func ValidateShortURL(inputURL string) error {
+	if inputURL == "" {
 		return errors.New("shortURL should not be empty")
 	}
-	if utf8.RuneCountInString(url) != constants.ShortIDLength {
+	if utf8.RuneCountInString(inputURL) != constants.ShortIDLength {
 		return errors.New("shortURL length should be 8")
 	}
 	return nil
 }
 
-func ValidateURL(url string, paramName string) error {
-	if url == "" {
-		return fmt.Errorf("required %s", paramName)
+// ValidateURL - Валидирует оригинальную ссылку.
+func ValidateURL(inputURL string, paramName string) error {
+	// Проверяем, что строка не пустая
+	if inputURL == "" {
+		return fmt.Errorf("%s can't be empty", paramName)
 	}
-	verifyRes, urlIsValid := urlverifier.NewVerifier().Verify(url)
-	if urlIsValid != nil || !verifyRes.IsURL || !verifyRes.IsRFC3986URL {
-		return fmt.Errorf("%s verify error", paramName)
+	// Парсим URL
+	parsedURL, err := url.ParseRequestURI(inputURL)
+	if err != nil {
+		return fmt.Errorf("incorrect format %s: %w", paramName, err)
 	}
+	// Проверяем наличие схемы и хоста
+	if parsedURL.Scheme == "" || parsedURL.Host == "" {
+		return fmt.Errorf("%s must contain schema and host", paramName)
+	}
+
 	return nil
 }
 
+// ValidatePath - Валидирует path ссылки.
 func ValidatePath(path string) bool {
 	segments := strings.Split(path, "/")
 	return len(segments) == 2 && segments[1] != ""

@@ -1,4 +1,5 @@
-package main
+//nolint:testableexamples // no output this example
+package handlers
 
 import (
 	"bufio"
@@ -15,12 +16,12 @@ import (
 var endpoint string = "http://localhost:8080/"
 
 // ShortenRequest - Структура запроса сокращения ссылки.
-type ShortenRequest struct {
+type ExShortenRequest struct {
 	// URL - Оригинальная ссылка.
 	URL string `json:"url"`
 }
 
-func main() {
+func Example() {
 	// приглашение в консоли
 	fmt.Println("Введите длинный URL")
 	// открываем потоковое чтение из консоли
@@ -103,7 +104,7 @@ func getRequestText(url string, isCompress bool) (*http.Request, error) {
 }
 
 func getRequestJSON(url string, isCompress bool) (*http.Request, error) {
-	rqModel := ShortenRequest{URL: url}
+	rqModel := ExShortenRequest{URL: url}
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(rqModel)
 	if err != nil {

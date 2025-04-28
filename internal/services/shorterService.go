@@ -11,27 +11,36 @@ import (
 	"github.com/google/uuid"
 )
 
+// ShortLinkRepo - Интерфейс репозитория скоращателя ссылок.
 type ShortLinkRepo interface {
+	// Add - Сохраняет структуру сокращенной ссылки.
 	Add(ctx context.Context, link *data.ShortLinkData) (*data.ShortLinkData, error)
+	// AddBatch - Сохраняет пачку структур сокращенных ссылок.
 	AddBatch(ctx context.Context, links []*data.ShortLinkData) ([]*data.ShortLinkData, error)
+	// Get - Читает полную ссылку по сокращенной ссылке.
 	Get(ctx context.Context, shortID string) (*data.ShortLinkData, error)
+	// GetAllByUserID - Получить все сокращенные ссылки указанного пользователя.
 	GetAllByUserID(ctx context.Context, userID string) ([]*data.ShortLinkData, error)
+	// DeleteBatch - Удаляет пачку структур сокращенных ссылок.
 	DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error
 }
 
 // Генерирует мок для ShortLinkRepo
 //go:generate mockgen -destination=mock_services_test.go -package services github.com/VladSnap/shortener/internal/services ShortLinkRepo
 
+// NaiveShorterService - Структура сервиса сокращателя ссылок.
 type NaiveShorterService struct {
 	shortLinkRepo ShortLinkRepo
 }
 
+// NewNaiveShorterService - Создает новую структуру NaiveShorterService с указателем.
 func NewNaiveShorterService(repo ShortLinkRepo) *NaiveShorterService {
 	service := new(NaiveShorterService)
 	service.shortLinkRepo = repo
 	return service
 }
 
+// CreateShortLink - Создает сокращенную ссылку.
 func (service *NaiveShorterService) CreateShortLink(ctx context.Context,
 	originalURL string, userID string) (*ShortedLink, error) {
 	id, shortID, err := createNewIds()
@@ -54,6 +63,7 @@ func (service *NaiveShorterService) CreateShortLink(ctx context.Context,
 	return res, nil
 }
 
+// GetURL - Читает оригинальную ссылку по сокращенной ссылке.
 func (service *NaiveShorterService) GetURL(ctx context.Context, shortID string) (*ShortedLink, error) {
 	link, err := service.shortLinkRepo.Get(ctx, shortID)
 	if err != nil {
@@ -64,6 +74,7 @@ func (service *NaiveShorterService) GetURL(ctx context.Context, shortID string) 
 	return nil, nil //nolint:nilnil // expected return nil
 }
 
+// CreateShortLinkBatch - Создает пачку сокращенных ссылок.
 func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context,
 	originalLinks []*OriginalLink, userID string) ([]*ShortedLink, error) {
 	dataModels := make([]*data.ShortLinkData, 0, len(originalLinks))
@@ -93,6 +104,7 @@ func (service *NaiveShorterService) CreateShortLinkBatch(ctx context.Context,
 	return createdModels, nil
 }
 
+// GetAllByUserID - Получить все сокращенные ссылки указанного пользователя.
 func (service *NaiveShorterService) GetAllByUserID(ctx context.Context, userID string) (
 	[]*ShortedLink, error) {
 	links, err := service.shortLinkRepo.GetAllByUserID(ctx, userID)
@@ -109,6 +121,7 @@ func (service *NaiveShorterService) GetAllByUserID(ctx context.Context, userID s
 	return shortedLinks, nil
 }
 
+// DeleteBatch - Удаляет пачку структур сокращенных ссылок.
 func (service *NaiveShorterService) DeleteBatch(ctx context.Context, shortIDs []DeleteShortID) error {
 	err := service.shortLinkRepo.DeleteBatch(ctx, convertDeleteShort(shortIDs))
 	if err != nil {

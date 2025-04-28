@@ -12,11 +12,13 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// DatabaseShortener - Структура БД сокращателя ссылок. Содержит в себе ссылку на объект sql и строку подключения к БД.
 type DatabaseShortener struct {
 	*sql.DB
 	Dsn string
 }
 
+// NewDatabaseShortener - Создает новую структуру DatabaseShortener с указателем.
 func NewDatabaseShortener(dsn string) (*DatabaseShortener, error) {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
@@ -27,6 +29,7 @@ func NewDatabaseShortener(dsn string) (*DatabaseShortener, error) {
 	return ds, nil
 }
 
+// Close - Закрывает соединение с БД.
 func (ds *DatabaseShortener) Close() error {
 	err := ds.DB.Close()
 	if err != nil {
@@ -37,6 +40,7 @@ func (ds *DatabaseShortener) Close() error {
 	return nil
 }
 
+// InitDatabase - Инициализирует и применяет миграции БД.
 func (ds *DatabaseShortener) InitDatabase() error {
 	driver, err := postgres.WithInstance(ds.DB, &postgres.Config{})
 	if err != nil {

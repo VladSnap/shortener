@@ -9,18 +9,22 @@ import (
 	"github.com/VladSnap/shortener/internal/config"
 	"github.com/VladSnap/shortener/internal/log"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"go.uber.org/zap"
 )
 
+// GetPingHandler - Обработчик запроса проверки доступности базы данных.
 type GetPingHandler struct {
 	opts *config.Options
 }
 
+// NewGetPingHandler - Создает новую структуру GetPingHandler с указателем.
 func NewGetPingHandler(opts *config.Options) *GetPingHandler {
 	handler := new(GetPingHandler)
 	handler.opts = opts
 	return handler
 }
 
+// Handle - Обрабатывает входящий запрос.
 func (handler *GetPingHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(res, "Http method not GET", http.StatusBadRequest)
@@ -35,7 +39,7 @@ func (handler *GetPingHandler) Handle(res http.ResponseWriter, req *http.Request
 	defer func() {
 		err := db.Close()
 		if err != nil {
-			log.Zap.Error("failed database connection close: %w", err)
+			log.Zap.Error("failed database connection close", zap.Error(err))
 		}
 	}()
 
@@ -51,7 +55,7 @@ func (handler *GetPingHandler) Handle(res http.ResponseWriter, req *http.Request
 	res.WriteHeader(http.StatusOK)
 	_, err = res.Write([]byte("OK"))
 	if err != nil {
-		log.Zap.Errorf(ErrFailedWriteToResponse, err)
+		log.Zap.Error(ErrFailedWriteToResponse, zap.Error(err))
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}

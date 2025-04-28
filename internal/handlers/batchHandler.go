@@ -10,23 +10,32 @@ import (
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/services"
 	"github.com/VladSnap/shortener/internal/validation"
+	"go.uber.org/zap"
 )
 
+// ShortenRowRequest - Структура запроса для BatchHandler.
 type ShortenRowRequest struct {
+	// CorrelationID - Идентификатор пачки.
 	CorrelationID string `json:"correlation_id"`
-	OriginalURL   string `json:"original_url"`
+	// OriginalURL - Оригинальный полный URL.
+	OriginalURL string `json:"original_url"`
 }
 
+// ShortenRowResponse - Структура ответа для BatchHandler.
 type ShortenRowResponse struct {
+	// CorrelationID - Идентификатор пачки.
 	CorrelationID string `json:"correlation_id"`
-	ShortURL      string `json:"short_url"`
+	// ShortURL - Сокращенный URL.
+	ShortURL string `json:"short_url"`
 }
 
+// BatchHandler - Обработчик запроса сокращения пачки ссылок.
 type BatchHandler struct {
 	service ShorterService
 	baseURL string
 }
 
+// NewBatchHandler - Создает новую структуру BatchHandler с указателем.
 func NewBatchHandler(service ShorterService, baseURL string) *BatchHandler {
 	handler := new(BatchHandler)
 	handler.service = service
@@ -34,6 +43,7 @@ func NewBatchHandler(service ShorterService, baseURL string) *BatchHandler {
 	return handler
 }
 
+// Handle - Обрабатывает входящий запрос.
 func (handler *BatchHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(res, "Http method not POST", http.StatusBadRequest)
@@ -101,7 +111,7 @@ func (handler *BatchHandler) Handle(res http.ResponseWriter, req *http.Request) 
 	err = json.NewEncoder(res).Encode(responseRows)
 
 	if err != nil {
-		log.Zap.Errorf(ErrFailedWriteToResponse, err)
+		log.Zap.Error(ErrFailedWriteToResponse, zap.Error(err))
 		return
 	}
 }

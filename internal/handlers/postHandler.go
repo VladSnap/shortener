@@ -8,13 +8,16 @@ import (
 	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/validation"
+	"go.uber.org/zap"
 )
 
+// PostHandler - Обработчик запроса сокращения одной ссылки в формате text/plain.
 type PostHandler struct {
 	service ShorterService
 	baseURL string
 }
 
+// NewPostHandler - Создает новую структуру PostHandler с указателем.
 func NewPostHandler(service ShorterService, baseURL string) *PostHandler {
 	handler := new(PostHandler)
 	handler.service = service
@@ -22,6 +25,7 @@ func NewPostHandler(service ShorterService, baseURL string) *PostHandler {
 	return handler
 }
 
+// Handle - Обрабатывает входящий запрос.
 func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(res, "Http method not POST", http.StatusBadRequest)
@@ -73,7 +77,7 @@ func (handler *PostHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	_, err = res.Write([]byte(handler.baseURL + "/" + shortLink.URL))
 
 	if err != nil {
-		log.Zap.Errorf(ErrFailedWriteToResponse, err)
+		log.Zap.Error(ErrFailedWriteToResponse, zap.Error(err))
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}

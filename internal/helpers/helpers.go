@@ -9,6 +9,7 @@ import (
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
+// RandStringRunes - Генерирует случайную строку из заданного набора символов заданной длины.
 func RandStringRunes(n int) (string, error) {
 	b := make([]rune, n)
 	maxLetters := big.NewInt(int64(len(letters)))
@@ -22,6 +23,7 @@ func RandStringRunes(n int) (string, error) {
 	return string(b), nil
 }
 
+// DirectoryExists - Проверяет существует ли директория на диске.
 func DirectoryExists(path string) (bool, error) {
 	// Пытаемся получить информацию о пути.
 	_, err := os.Stat(path)

@@ -11,16 +11,15 @@ import (
 	"strings"
 )
 
+// CookieAuthData - Структура для хранения информации о пользователе в cookie в формате JSON.
 type CookieAuthData struct {
 	UserID string `json:"user_id"`
 }
 
 const cookieValidSegmentCount int = 2
 
-// Такое следует хранить в защищенном хранилище, а не в коде или в конфигах.
-var authCookieKey = sha256.Sum256([]byte("kl1jmo;u6hn&*On0jo8f"))
-
-func CreateSignedCookie(userID string) (string, error) {
+// CreateSignedCookie - Создает безопасную (подписаную) куки.
+func CreateSignedCookie(userID, authKey string) (string, error) {
 	data := CookieAuthData{userID}
 	var jsonBuf bytes.Buffer
 	err := json.NewEncoder(&jsonBuf).Encode(data)
@@ -29,6 +28,7 @@ func CreateSignedCookie(userID string) (string, error) {
 	}
 	cookieContent := base64.RawURLEncoding.EncodeToString(jsonBuf.Bytes())
 	// Подписываем алгоритмом HMAC, используя SHA-256.
+	authCookieKey := sha256.Sum256([]byte(authKey))
 	h := hmac.New(sha256.New, authCookieKey[:])
 	h.Write([]byte(cookieContent))
 	hmacCookie := h.Sum(nil)
@@ -39,7 +39,8 @@ func CreateSignedCookie(userID string) (string, error) {
 	return cookie, nil
 }
 
-func VerifySignCookie(cookieValue string) (bool, error) {
+// VerifySignCookie - Проверяет подпись куки.
+func VerifySignCookie(cookieValue string, authKey string) (bool, error) {
 	cookieSegments := strings.Split(cookieValue, ".")
 	if len(cookieSegments) != cookieValidSegmentCount {
 		return false, errors.New("the cookie structure is not correct")
@@ -51,6 +52,7 @@ func VerifySignCookie(cookieValue string) (bool, error) {
 		return false, fmt.Errorf("failed decode cookieSign from base64: %w", err)
 	}
 
+	authCookieKey := sha256.Sum256([]byte(authKey))
 	h := hmac.New(sha256.New, authCookieKey[:])
 	h.Write([]byte(cookieContent))
 	hmacCookie := h.Sum(nil)
@@ -62,6 +64,7 @@ func VerifySignCookie(cookieValue string) (bool, error) {
 	return isVerify, nil
 }
 
+// DecodeCookie - Декодирует куки, чтобы далее извлечь из неё структуру CookieAuthData.
 func DecodeCookie(cookieValue string) (*CookieAuthData, error) {
 	cookieSegments := strings.Split(cookieValue, ".")
 	if len(cookieSegments) != cookieValidSegmentCount {

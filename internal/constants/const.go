@@ -2,10 +2,16 @@ package constants
 
 import "os"
 
+// KeyContext - Тип ключа для доступа к данным куки через контекст.
 type KeyContext string
 
+// Общие константы для internal пакетов.
 const (
-	FileRWPerm       = os.FileMode(0o666) // Права для файла: Владелец, группа и остальные: чтение и запись
+	// FileRWPerm - Константа прав доступа к файлу для чтения.
+	// Права для файла: Владелец, группа и остальные: чтение и запись.
+	FileRWPerm = os.FileMode(0o666)
+	// UserIDContextKey - Имя ключа для доступа к данным куки через контекст.
 	UserIDContextKey = KeyContext("UserID")
-	ShortIDLength    = 8 // Длина сокращенной ссылки
+	// ShortIDLength - Длина сокращенной ссылки.
+	ShortIDLength = 8
 )

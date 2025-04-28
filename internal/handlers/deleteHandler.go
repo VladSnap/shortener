@@ -7,29 +7,35 @@ import (
 	"strings"
 	"time"
 
+	_ "net/http/pprof" // подключаем пакет pprof
+
 	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/services"
 	"github.com/VladSnap/shortener/internal/validation"
 )
 
+// DeleteHandler - Обработчик запроса удаления сокращенной ссылки.
 type DeleteHandler struct {
 	deleteWorker DeleterWorker
 }
 
 //go:generate mockgen -destination=mocks/deleteWorker_mock.go -package=mocks github.com/VladSnap/shortener/internal/handlers DeleterWorker
 
+// DeleterWorker - Интерфейс воркера который в фоне занимается удалением сокращенных ссылок.
 type DeleterWorker interface {
 	Close() error
 	AddToDelete(shortIDs chan services.DeleteShortID)
 	RunWork()
 }
 
+// NewDeleteHandler - Создает новую структуру DeleteHandler с указателем.
 func NewDeleteHandler(deleteWorker DeleterWorker) *DeleteHandler {
 	handler := new(DeleteHandler)
 	handler.deleteWorker = deleteWorker
 	return handler
 }
 
+// Handle - Обрабатывает входящий запрос.
 func (handler *DeleteHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodDelete {
 		http.Error(res, "Http method not DELETE", http.StatusBadRequest)

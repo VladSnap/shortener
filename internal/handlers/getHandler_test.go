@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -121,7 +120,6 @@ func TestGetHandler(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockService := m.NewMockShorterService(ctrl)
@@ -135,12 +133,12 @@ func TestGetHandler(t *testing.T) {
 			} else {
 				slink = &services.ShortedLink{OriginalURL: tt.url}
 			}
-			mockService.EXPECT().GetURL(ctx, tt.id).
-				Return(slink, nil).
-				AnyTimes()
 
 			request := httptest.NewRequest(tt.httpMethod, tt.requestPath, http.NoBody)
 			request.SetPathValue("id", tt.id)
+			mockService.EXPECT().GetURL(request.Context(), tt.id).
+				Return(slink, nil).
+				AnyTimes()
 			w := httptest.NewRecorder()
 			getHandler.Handle(w, request)
 

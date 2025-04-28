@@ -58,7 +58,7 @@ func TestBatchHandler_Handle(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "OriginalURL verify error\n",
+				responseBody: "incorrect format OriginalURL: parse \"google.com\": invalid URI for request\n",
 			},
 		},
 	}
@@ -68,7 +68,7 @@ func TestBatchHandler_Handle(t *testing.T) {
 	mockService := m.NewMockShorterService(ctrl)
 	batchHandler := NewBatchHandler(mockService, baseURL)
 	userID := "d1a8485a-430a-49f4-92ba-50886e1b07c6"
-	ctx := context.WithValue(context.Background(), constants.UserIDContextKey, userID)
+	ctx := context.WithValue(t.Context(), constants.UserIDContextKey, userID)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

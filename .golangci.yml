@@ -1,6 +1,6 @@
 # Options for analysis running.
 run:
-  go: "1.22"
+  go: "1.24.2"
   # Settable parameters #
   timeout: 5m
   tests: true
@@ -486,7 +486,6 @@ linters:
     - errcheck
     - errname
     - errorlint
-    - execinquery
     - exhaustive
     - forcetypeassert
     - gocheckcompilerdirectives
@@ -495,7 +494,7 @@ linters:
     - godot
     - gofmt
     - goimports
-    - gomnd
+    - mnd
     - goprintffuncname
     - gosec
     - gosimple
@@ -523,7 +522,7 @@ linters:
     - sqlclosecheck
     - staticcheck
     - stylecheck
-    - tenv
+    - usetesting
     - testableexamples
     - thelper
     - tparallel

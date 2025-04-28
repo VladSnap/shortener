@@ -6,16 +6,19 @@ import (
 	"github.com/VladSnap/shortener/internal/validation"
 )
 
+// GetHandler - Обработчик запроса чтения полной ссылки по её сокращению.
 type GetHandler struct {
 	service ShorterService
 }
 
+// NewGetHandler - Создает новую структуру GetHandler с указателем.
 func NewGetHandler(service ShorterService) *GetHandler {
 	handler := new(GetHandler)
 	handler.service = service
 	return handler
 }
 
+// Handle - Обрабатывает входящий запрос.
 func (handler *GetHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(res, "Http method not GET", http.StatusBadRequest)

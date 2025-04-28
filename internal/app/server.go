@@ -14,16 +14,22 @@ import (
 	"github.com/VladSnap/shortener/internal/middlewares"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"go.uber.org/zap"
 )
 
+// Handler - Интерфейс обработчика http запросов.
 type Handler interface {
+	// Handle - Обработка запроса.
 	Handle(res http.ResponseWriter, req *http.Request)
 }
 
+// ShortenerServer - Интерфейс сервера сокращателя ссылок.
 type ShortenerServer interface {
+	// RunServer - Запускает сервер.
 	RunServer() error
 }
 
+// ChiShortenerServer - Импоементация сервера сокращателя ссылок ShortenerServer.
 type ChiShortenerServer struct {
 	opts           *config.Options
 	postHandler    Handler
@@ -35,6 +41,7 @@ type ChiShortenerServer struct {
 	deleteHandler  Handler
 }
 
+// NewChiShortenerServer - Создает новую структуру ChiShortenerServer с указателем.
 func NewChiShortenerServer(opts *config.Options,
 	postHandler Handler,
 	getHandler Handler,
@@ -55,6 +62,7 @@ func NewChiShortenerServer(opts *config.Options,
 	return server
 }
 
+// RunServer - Запускает сервер.
 func (server *ChiShortenerServer) RunServer() error {
 	var httpListener = server.initServer()
 	// Создаем сервер.
@@ -67,7 +75,7 @@ func (server *ChiShortenerServer) RunServer() error {
 
 		log.Zap.Info("Termination signal received. Stopping server....")
 		if err := serv.Shutdown(context.Background()); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Zap.Error("Error while stopping the server: %v\n", err)
+			log.Zap.Error("Error while stopping the server", zap.Error(err))
 		}
 	}()
 	// Запускаем прослушивание запросов.
@@ -89,12 +97,16 @@ func (server *ChiShortenerServer) initServer() *chi.Mux {
 
 	// Роутинги с аутентификацией.
 	r.Group(func(r chi.Router) {
-		r.Use(middlewares.AuthMiddleware)
+		r.Use(middlewares.AuthMiddleware(server.opts))
 		r.Post("/", server.postHandler.Handle)
 		r.Post("/api/shorten", server.shortenHandler.Handle)
 		r.Post("/api/shorten/batch", server.batchHandler.Handle)
 		r.Get("/api/user/urls", server.urlsHandler.Handle)
 		r.Delete("/api/user/urls", server.deleteHandler.Handle)
 	})
+
+	if server.opts.Performance {
+		r.Handle("/debug/pprof/*", http.DefaultServeMux)
+	}
 	return r
 }

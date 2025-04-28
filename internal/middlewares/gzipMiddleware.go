@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/VladSnap/shortener/internal/log"
+	"go.uber.org/zap"
 )
 
 var gzipContentTypes *[]string = &[]string{"application/json", "text/html"}
@@ -18,6 +19,7 @@ type gzipWriter struct {
 	isCompressed bool
 }
 
+// Write - Записать тело ответа.
 func (w *gzipWriter) Write(b []byte) (int, error) {
 	if w.isCompressed {
 		// Сжимаем ответ, если у него подходящий тип контента
@@ -36,6 +38,7 @@ func (w *gzipWriter) Write(b []byte) (int, error) {
 	return bytes, nil
 }
 
+// WriteHeader - Записать заголовок.
 func (w *gzipWriter) WriteHeader(statusCode int) {
 	ct := w.Header().Get("Content-Type")
 
@@ -48,6 +51,7 @@ func (w *gzipWriter) WriteHeader(statusCode int) {
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 
+// Close - Закрывает Writer.
 func (w *gzipWriter) Close() error {
 	if w.isCompressed {
 		err := w.zw.Close()
@@ -59,6 +63,7 @@ func (w *gzipWriter) Close() error {
 	return nil
 }
 
+// GzipMiddleware - Мидлварь для распаковки сжатого ответа и сжатия ответа.
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ow := w
@@ -78,7 +83,7 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			defer func() {
 				err := gzReader.Close()
 				if err != nil {
-					log.Zap.Error("failed gzip reader close: %w", err)
+					log.Zap.Error("failed gzip reader close", zap.Error(err))
 				}
 			}()
 		}
@@ -94,7 +99,7 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			defer func() {
 				err := gzipWritterWrap.Close()
 				if err != nil {
-					log.Zap.Error("failed gzip writer close: %w", err)
+					log.Zap.Error("failed gzip writer close", zap.Error(err))
 				}
 			}()
 		}
