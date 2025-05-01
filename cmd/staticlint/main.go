@@ -65,8 +65,6 @@ import (
 	"honnef.co/go/tools/stylecheck"
 )
 
-// Analyzer проверяет наличие прямых вызовов os.Exit в функции main пакета main.
-
 func main() {
 	// Список стандартных анализаторов
 	stdAnalyzers := []*analysis.Analyzer{

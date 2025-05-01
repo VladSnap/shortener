@@ -10,7 +10,7 @@ import (
 // Analyzer запрещает использование os.Exit в main.main.
 var Analyzer = &analysis.Analyzer{
 	Name: "osexit",
-	Doc:  "проверяет, что в функции main.main не используется os.Exit напрямую",
+	Doc:  "Запрещает использовать прямой вызов os.Exit в функции main пакета main.",
 	Run:  run,
 }
 
