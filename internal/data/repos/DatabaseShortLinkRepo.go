@@ -1,3 +1,4 @@
+// Package repos хранит репозитории доступа к данным.
 package repos
 
 import (

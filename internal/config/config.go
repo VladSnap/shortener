@@ -1,3 +1,4 @@
+// Package config отвечает за конфигурирование приложения shortener.
 package config
 
 import (

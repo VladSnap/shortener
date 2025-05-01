@@ -1,3 +1,4 @@
+// Package auth реализует логику аутентификации пользователя с применением cookies.
 package auth
 
 import (

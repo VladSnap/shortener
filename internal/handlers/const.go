@@ -1,3 +1,4 @@
+// Package handlers реализует обработчики http запросов.
 package handlers
 
 // Константы http заголовков и текста ошибок.

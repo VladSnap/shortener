@@ -1,3 +1,4 @@
+// Package validation хранит логику валидации конфига.
 package validation
 
 import (
