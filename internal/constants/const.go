@@ -1,3 +1,4 @@
+// Package constants хранит общие констаны всего проекта.
 package constants
 
 import "os"

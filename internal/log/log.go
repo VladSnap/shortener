@@ -1,3 +1,4 @@
+// Package log реализует обертку над пакетом логирования go.uber.org/zap и отвечает за его инициализацию.
 package log
 
 import (

@@ -1,3 +1,4 @@
+// Package app хранит файлы для инициализации приложения shortener. Так же тут конфигурируется DI.
 package app
 
 import (
