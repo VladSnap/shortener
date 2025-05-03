@@ -39,7 +39,7 @@ func main() {
 		panic(err)
 	}
 
-	const perm = os.FileMode(0o666)
+	const perm = os.FileMode(0o644)
 	err = os.WriteFile(fileName+".go", formatted, perm)
 	if err != nil {
 		panic(err)
