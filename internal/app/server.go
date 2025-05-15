@@ -16,6 +16,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 // Handler - Интерфейс обработчика http запросов.
@@ -65,7 +66,7 @@ func NewChiShortenerServer(opts *config.Options,
 
 // RunServer - Запускает сервер.
 func (server *ChiShortenerServer) RunServer() error {
-	var httpListener = server.initServer()
+	var httpListener = server.initRouter()
 	// Создаем сервер.
 	serv := &http.Server{Addr: server.opts.ListenAddress, Handler: httpListener}
 	// Горутина для прослушивания сигналов завершения.
@@ -79,15 +80,20 @@ func (server *ChiShortenerServer) RunServer() error {
 			log.Zap.Error("Error while stopping the server", zap.Error(err))
 		}
 	}()
+	var err error
 	// Запускаем прослушивание запросов.
-	err := serv.ListenAndServe()
+	if server.opts.EnableHTTPS {
+		err = listenTLS(serv)
+	} else {
+		err = serv.ListenAndServe()
+	}
 	if err != nil {
 		return fmt.Errorf("failed server listen: %w", err)
 	}
 	return nil
 }
 
-func (server *ChiShortenerServer) initServer() *chi.Mux {
+func (server *ChiShortenerServer) initRouter() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middlewares.LogMiddleware)
 	r.Use(middlewares.GzipMiddleware)
@@ -110,4 +116,19 @@ func (server *ChiShortenerServer) initServer() *chi.Mux {
 		r.Handle("/debug/pprof/*", http.DefaultServeMux)
 	}
 	return r
+}
+
+func listenTLS(serv *http.Server) error {
+	// конструируем менеджер TLS-сертификатов
+	manager := &autocert.Manager{
+		// директория для хранения сертификатов
+		Cache: autocert.DirCache("cache-dir"),
+		// функция, принимающая Terms of Service издателя сертификатов
+		Prompt: autocert.AcceptTOS,
+		// перечень доменов, для которых будут поддерживаться сертификаты
+		HostPolicy: autocert.HostWhitelist("shortener.local"),
+	}
+	serv.TLSConfig = manager.TLSConfig()
+	err := serv.ListenAndServeTLS("", "")
+	return fmt.Errorf("failed listenTLS: %w", err)
 }
