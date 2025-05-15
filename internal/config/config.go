@@ -25,6 +25,8 @@ type Options struct {
 	AuthCookieKey string `env:"AUTH_COOKIE_KEY"`
 	// Performance - Enable pprof for performance testing
 	Performance bool
+	// Enable https for run server
+	EnableHTTPS bool `env:"ENABLE_HTTPS"`
 }
 
 // MarshalLogObject - Сериализует структуру конфига для эффективного логирования.
@@ -35,6 +37,7 @@ func (opts *Options) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("DataBaseConnString", opts.DataBaseConnString)
 	enc.AddBool("Performance", opts.Performance)
 	enc.AddString("AuthCookieKey", opts.AuthCookieKey)
+	enc.AddBool("EnableHTTPS", opts.EnableHTTPS)
 	return nil
 }
 
@@ -72,6 +75,7 @@ func ParseFlags(validater ConfigValidater) *Options {
 	flag.StringVar(&opts.DataBaseConnString, "d", "", "database connection string")
 	flag.BoolVar(&opts.Performance, "p", false, "pprof")
 	flag.StringVar(&opts.AuthCookieKey, "k", "", "key for signing auth cookies")
+	flag.BoolVar(&opts.EnableHTTPS, "s", false, "enable https for run server")
 
 	flag.Parse()
 
