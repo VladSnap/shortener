@@ -1,3 +1,4 @@
+// Package data хранит модели данных для БД.
 package data
 
 // ShortLinkData - Структура таблицы БД сокращенной ссылки.

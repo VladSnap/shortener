@@ -1,3 +1,4 @@
+// Package validation хранит логику валидации для обработчиков http запросов.
 package validation
 
 import (

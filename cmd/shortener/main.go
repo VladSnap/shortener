@@ -12,9 +12,18 @@ import (
 	"go.uber.org/zap"
 )
 
+// go run -ldflags "-X main.buildVersion=v1.2.3 -X main.buildDate=2025-05-04 -X main.buildCommit=d8dg96n8n7" .
+var buildVersion string = "N/A"
+var buildDate string = "N/A"
+var buildCommit string = "N/A"
+
 var resourceManager *services.ResourceManager
 
 func main() {
+	fmt.Println("Build version: " + buildVersion)
+	fmt.Println("Build date: " + buildDate)
+	fmt.Println("Build commit: " + buildCommit)
+
 	logWorkDir(false)
 	resourceManager = services.NewResourceManager()
 	defer func() {
