@@ -69,16 +69,10 @@ func (server *ChiShortenerServer) RunServer() error {
 	var httpListener = server.initRouter()
 	// Создаем сервер.
 	serv := &http.Server{Addr: server.opts.ListenAddress, Handler: httpListener}
+	idleConnsClosed := make(chan struct{})
 	// Горутина для прослушивания сигналов завершения.
 	go func() {
-		sigChan := make(chan os.Signal, 1)
-		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-		<-sigChan
-
-		log.Zap.Info("Termination signal received. Stopping server....")
-		if err := serv.Shutdown(context.Background()); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Zap.Error("Error while stopping the server", zap.Error(err))
-		}
+		handleGracefulShutdown(serv, idleConnsClosed)
 	}()
 	var err error
 	// Запускаем прослушивание запросов.
@@ -90,6 +84,10 @@ func (server *ChiShortenerServer) RunServer() error {
 	if err != nil {
 		return fmt.Errorf("failed server listen: %w", err)
 	}
+
+	// Ждём завершения процедуры graceful shutdown
+	// чтобы закрыть все соединения.
+	<-idleConnsClosed
 	return nil
 }
 
@@ -131,4 +129,22 @@ func listenTLS(serv *http.Server) error {
 	serv.TLSConfig = manager.TLSConfig()
 	err := serv.ListenAndServeTLS("", "")
 	return fmt.Errorf("failed listenTLS: %w", err)
+}
+
+// handleGracefulShutdown - Обрабатывает завершение работы сервера.
+// Принимает сигнал завершения и завершает работу сервера.
+// После завершения работы сервера, закрывает канал idleConnsClosed,
+// чтобы основной поток мог продолжить выполнение.
+func handleGracefulShutdown(serv *http.Server, idleConnsClosed chan struct{}) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	<-sigChan
+
+	log.Zap.Info("Termination signal received. Stopping server....")
+	if err := serv.Shutdown(context.Background()); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Zap.Error("Error while stopping the server", zap.Error(err))
+	}
+	// Сообщаем основному потоку,
+	// что все сетевые соединения обработаны и закрыты
+	close(idleConnsClosed)
 }
