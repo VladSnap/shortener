@@ -46,8 +46,16 @@ func (opts *Options) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("BaseURL", opts.BaseURL)
 	enc.AddString("FileStoragePath", opts.FileStoragePath)
 	enc.AddString("DataBaseConnString", opts.DataBaseConnString)
-	enc.AddBool("EnableHTTPS", *opts.EnableHTTPS)
-	enc.AddBool("Performance", *opts.Performance)
+	if opts.EnableHTTPS == nil {
+		enc.AddString("EnableHTTPS", "nil")
+	} else {
+		enc.AddBool("EnableHTTPS", *opts.EnableHTTPS)
+	}
+	if opts.Performance == nil {
+		enc.AddString("Performance", "nil")
+	} else {
+		enc.AddBool("Performance", *opts.Performance)
+	}
 	enc.AddString("AuthCookieKey", opts.AuthCookieKey)
 	enc.AddString("ConfigPath", opts.ConfigPath)
 	return nil
