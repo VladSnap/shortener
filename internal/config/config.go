@@ -14,11 +14,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type BoolFlag struct {
-	Set   bool
-	Value bool
-}
-
 // Options - Структура конфига приложения.
 type Options struct {
 	// ListenAddress - Server listen address.
