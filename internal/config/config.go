@@ -79,6 +79,7 @@ func InitConfig(validater ConfigValidater) (*Options, error) {
 	fmt.Println(jsonOpts)
 
 	opts = mergeOptions(opts, jsonOpts)
+	setDefaultOptions(opts)
 
 	err = validater.Validate(opts)
 
@@ -187,4 +188,17 @@ func mergeOptions(flagEnvOpts, fileOpts *Options) *Options {
 		merged.ConfigPath = fileOpts.ConfigPath
 	}
 	return &merged
+}
+
+// setDefaultOptions - Устанавливает значения по умолчанию для опций конфигурации.
+func setDefaultOptions(opts *Options) {
+	if opts.ListenAddress == "" {
+		opts.ListenAddress = ":8080"
+	}
+	if opts.BaseURL == "" {
+		opts.BaseURL = "http://localhost:8080"
+	}
+	if opts.AuthCookieKey == "" {
+		opts.AuthCookieKey = "testsecret"
+	}
 }
