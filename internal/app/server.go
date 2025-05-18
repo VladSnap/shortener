@@ -82,7 +82,7 @@ func (server *ChiShortenerServer) RunServer() error {
 	}()
 	var err error
 	// Запускаем прослушивание запросов.
-	if server.opts.EnableHTTPS {
+	if server.opts.EnableHTTPS != nil && *server.opts.EnableHTTPS {
 		err = listenTLS(serv)
 	} else {
 		err = serv.ListenAndServe()
@@ -112,7 +112,7 @@ func (server *ChiShortenerServer) initRouter() *chi.Mux {
 		r.Delete("/api/user/urls", server.deleteHandler.Handle)
 	})
 
-	if server.opts.Performance {
+	if server.opts.Performance != nil && *server.opts.Performance {
 		r.Handle("/debug/pprof/*", http.DefaultServeMux)
 	}
 	return r
