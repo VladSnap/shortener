@@ -39,7 +39,7 @@ func main() {
 	log.Zap.Info("run shorneter server", zap.Strings("Args", os.Args))
 
 	confValidator := &validation.OptionsValidator{}
-	opts, err := config.LoadConfig(confValidator)
+	opts, err := config.InitConfig(confValidator)
 	if err != nil {
 		panic(err)
 	}
