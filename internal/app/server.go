@@ -101,6 +101,7 @@ func (server *ChiShortenerServer) initRouter() *chi.Mux {
 	})
 
 	r.Group(func(r chi.Router) {
+		r.Use(middlewares.TrustedSubnetMiddleware(server.opts.TrustedSubnet))
 		r.Get("/api/internal/stats", server.getStatsHandler.Handle)
 	})
 

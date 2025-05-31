@@ -33,6 +33,8 @@ type Options struct {
 	Performance *bool `json:"-"`
 	// ConfigPath path to config file
 	ConfigPath string `env:"CONFIG" json:"-"`
+	// TrustedSubnet - Trusted subnet for access to statistics
+	TrustedSubnet string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 }
 
 // MarshalLogObject - Сериализует структуру конфига для эффективного логирования.
@@ -53,6 +55,7 @@ func (opts *Options) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 	enc.AddString("AuthCookieKey", opts.AuthCookieKey)
 	enc.AddString("ConfigPath", opts.ConfigPath)
+	enc.AddString("TrustedSubnet", opts.TrustedSubnet)
 	return nil
 }
 
@@ -131,6 +134,7 @@ func ParseFlags(opts *Options, validater ConfigValidater) {
 		*opts.EnableHTTPS = v
 	}))
 	flag.StringVar(&opts.ConfigPath, "c", "", "path to config file")
+	flag.StringVar(&opts.TrustedSubnet, "t", "", "trusted subnet for access to statistics")
 
 	flag.Parse()
 }
@@ -189,6 +193,9 @@ func mergeOptions(flagEnvOpts, fileOpts *Options) *Options {
 	}
 	if merged.ConfigPath == "" && fileOpts.ConfigPath != "" {
 		merged.ConfigPath = fileOpts.ConfigPath
+	}
+	if merged.TrustedSubnet == "" && fileOpts.TrustedSubnet != "" {
+		merged.TrustedSubnet = fileOpts.TrustedSubnet
 	}
 	return &merged
 }
