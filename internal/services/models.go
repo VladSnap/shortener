@@ -39,3 +39,14 @@ type DeleteShortID struct {
 func NewDeleteShortID(shortURL string, userID string) DeleteShortID {
 	return DeleteShortID{shortURL, userID}
 }
+
+// Stats - Статистика по пользователям и всем сокращенным ссылкам.
+type Stats struct {
+	Urls  int
+	Users int
+}
+
+// NewStats - Создает новую структуру Stats.
+func NewStats(urls, users int) *Stats {
+	return &Stats{Urls: urls, Users: users}
+}

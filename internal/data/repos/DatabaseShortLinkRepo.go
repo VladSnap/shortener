@@ -191,6 +191,20 @@ func (repo *DatabaseShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []d
 	return nil
 }
 
+// GetStats - Получает статистику о пользователях и всех ссылках.
+func (repo *DatabaseShortLinkRepo) GetStats(ctx context.Context) (*data.StatsData, error) {
+	sqlText := `SELECT COUNT(*) as urls, COUNT(distinct user_id) as users from SHORT_LINKS`
+	row := repo.database.QueryRowContext(ctx, sqlText)
+
+	stats := data.StatsData{}
+	err := row.Scan(&stats.Urls, &stats.Users)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("failed select stats: %w", err)
+	}
+
+	return &stats, nil
+}
+
 func toNullString(input string) sql.NullString {
 	if input == "" {
 		return sql.NullString{String: "", Valid: false}

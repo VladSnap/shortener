@@ -22,4 +22,6 @@ type ShorterService interface {
 	GetAllByUserID(ctx context.Context, userID string) ([]*services.ShortedLink, error)
 	// DeleteBatch - Удаляет одной пачкой сокращенные ссылки.
 	DeleteBatch(ctx context.Context, shortIDs []services.DeleteShortID) error
+	// GetStats - Получает статистику о пользователях и всех ссылках.
+	GetStats(ctx context.Context) (*services.Stats, error)
 }

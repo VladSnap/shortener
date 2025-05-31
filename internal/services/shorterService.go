@@ -23,6 +23,8 @@ type ShortLinkRepo interface {
 	GetAllByUserID(ctx context.Context, userID string) ([]*data.ShortLinkData, error)
 	// DeleteBatch - Удаляет пачку структур сокращенных ссылок.
 	DeleteBatch(ctx context.Context, shortIDs []data.DeleteShortData) error
+	// GetStats - Получает статистику о пользователях и всех ссылках.
+	GetStats(ctx context.Context) (*data.StatsData, error)
 }
 
 // Генерирует мок для ShortLinkRepo
@@ -128,6 +130,15 @@ func (service *NaiveShorterService) DeleteBatch(ctx context.Context, shortIDs []
 		return fmt.Errorf("failed DeleteBatch in repo: %w", err)
 	}
 	return nil
+}
+
+// GetStats - Получает статистику о пользователях и всех ссылках.
+func (service *NaiveShorterService) GetStats(ctx context.Context) (*Stats, error) {
+	stats, err := service.shortLinkRepo.GetStats(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed DeleteBatch in repo: %w", err)
+	}
+	return NewStats(stats.Urls, stats.Users), nil
 }
 
 func createNewIds() (id uuid.UUID, shortID string, err error) {

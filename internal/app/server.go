@@ -34,14 +34,15 @@ type ShortenerServer interface {
 
 // ChiShortenerServer - Импоементация сервера сокращателя ссылок ShortenerServer.
 type ChiShortenerServer struct {
-	opts           *config.Options
-	postHandler    Handler
-	getHandler     Handler
-	shortenHandler Handler
-	pingHandler    Handler
-	batchHandler   Handler
-	urlsHandler    Handler
-	deleteHandler  Handler
+	opts            *config.Options
+	postHandler     Handler
+	getHandler      Handler
+	shortenHandler  Handler
+	pingHandler     Handler
+	batchHandler    Handler
+	urlsHandler     Handler
+	deleteHandler   Handler
+	getStatsHandler Handler
 }
 
 // NewChiShortenerServer - Создает новую структуру ChiShortenerServer с указателем.
@@ -52,7 +53,8 @@ func NewChiShortenerServer(opts *config.Options,
 	pingHandler Handler,
 	batchHandler Handler,
 	urlsHandler Handler,
-	deleteHandler Handler) *ChiShortenerServer {
+	deleteHandler Handler,
+	getStatsHandler Handler) *ChiShortenerServer {
 	server := new(ChiShortenerServer)
 	server.opts = opts
 	server.postHandler = postHandler
@@ -62,6 +64,7 @@ func NewChiShortenerServer(opts *config.Options,
 	server.batchHandler = batchHandler
 	server.urlsHandler = urlsHandler
 	server.deleteHandler = deleteHandler
+	server.getStatsHandler = getStatsHandler
 	return server
 }
 
@@ -95,6 +98,10 @@ func (server *ChiShortenerServer) initRouter() *chi.Mux {
 		r.Post("/api/shorten/batch", server.batchHandler.Handle)
 		r.Get("/api/user/urls", server.urlsHandler.Handle)
 		r.Delete("/api/user/urls", server.deleteHandler.Handle)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Get("/api/internal/stats", server.getStatsHandler.Handle)
 	})
 
 	if server.opts.Performance != nil && *server.opts.Performance {

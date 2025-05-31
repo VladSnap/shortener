@@ -30,3 +30,14 @@ type DeleteShortData struct {
 func NewDeleteShortData(shortURL string, userID string) DeleteShortData {
 	return DeleteShortData{shortURL, userID}
 }
+
+// StatsData - Статистика по пользователям и всем сокращенным ссылкам.
+type StatsData struct {
+	Urls  int
+	Users int
+}
+
+// NewStatsData - Создает новую структуру StatsData с указателем.
+func NewStatsData(urls, users int) *StatsData {
+	return &StatsData{Urls: urls, Users: users}
+}
