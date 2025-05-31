@@ -5,6 +5,8 @@ package handlers
 const (
 	// ErrFailedWriteToResponse - Ошибка записи ответа.
 	ErrFailedWriteToResponse = "failed write to response: %w"
+	// ValidateErrHTTPNotGET - Текст ошибки валидации, если метод обработчика не GET.
+	ValidateErrHTTPNotGET = "Http method not GET"
 	// HeaderContentType - Http заголовок Content-Type.
 	HeaderContentType = "Content-Type"
 	// HeaderApplicationJSONValue - Http заголовок application/json.

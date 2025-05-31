@@ -27,7 +27,7 @@ func NewGetPingHandler(opts *config.Options) *GetPingHandler {
 // Handle - Обрабатывает входящий запрос.
 func (handler *GetPingHandler) Handle(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
-		http.Error(res, "Http method not GET", http.StatusBadRequest)
+		http.Error(res, ValidateErrHTTPNotGET, http.StatusBadRequest)
 		return
 	}
 

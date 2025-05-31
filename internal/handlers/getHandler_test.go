@@ -62,7 +62,7 @@ func TestGetHandler(t *testing.T) {
 			want: want{
 				code:         400,
 				contentType:  "text/plain; charset=utf-8",
-				responseBody: "Http method not GET\n",
+				responseBody: ValidateErrHTTPNotGET + "\n",
 				location:     "",
 			},
 		},
