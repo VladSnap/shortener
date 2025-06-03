@@ -63,9 +63,9 @@ func testHTTPAPI() {
 	if err != nil {
 		log.Fatalf("HTTP POST failed: %v", err)
 	}
-
+	defer closeBody(resp.Body)
 	body, err := io.ReadAll(resp.Body)
-	closeBody(resp.Body)
+
 	if err != nil {
 		log.Fatalf("Failed to read response body: %v", err)
 	}
@@ -87,9 +87,8 @@ func testHTTPAPI() {
 	if err != nil {
 		log.Fatalf("HTTP batch failed: %v", err)
 	}
-
+	defer closeBody(resp.Body)
 	body, err = io.ReadAll(resp.Body)
-	closeBody(resp.Body)
 	if err != nil {
 		log.Fatalf("Failed to read batch response body: %v", err)
 	}
