@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package shortener;
+
+option go_package = "github.com/VladSnap/shortener/proto/gen/shortener";
+
+// ShortenerService provides URL shortening functionality
+service ShortenerService {
+  // CreateShortLink creates a shortened URL for a given original URL
+  rpc CreateShortLink(CreateShortLinkRequest) returns (CreateShortLinkResponse);
+  
+  // CreateShortLinkBatch creates multiple shortened URLs in a single request
+  rpc CreateShortLinkBatch(CreateShortLinkBatchRequest) returns (CreateShortLinkBatchResponse);
+  
+  // GetURL retrieves the original URL by its short identifier
+  rpc GetURL(GetURLRequest) returns (GetURLResponse);
+  
+  // GetAllByUserID retrieves all URLs shortened by a specific user
+  rpc GetAllByUserID(GetAllByUserIDRequest) returns (GetAllByUserIDResponse);
+  
+  // DeleteBatch marks multiple URLs as deleted
+  rpc DeleteBatch(DeleteBatchRequest) returns (DeleteBatchResponse);
+  
+  // GetStats returns service statistics (only for trusted subnets)
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+  
+  // Ping checks service health
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+// CreateShortLinkRequest represents a request to create a single short link
+message CreateShortLinkRequest {
+  string original_url = 1;
+  string user_id = 2;
+}
+
+// CreateShortLinkResponse represents the response for creating a short link
+message CreateShortLinkResponse {
+  string short_url = 1;
+  bool is_duplicate = 2;
+}
+
+// OriginalLinkBatch represents a single URL in a batch request
+message OriginalLinkBatch {
+  string correlation_id = 1;
+  string original_url = 2;
+}
+
+// CreateShortLinkBatchRequest represents a request to create multiple short links
+message CreateShortLinkBatchRequest {
+  repeated OriginalLinkBatch links = 1;
+  string user_id = 2;
+}
+
+// ShortedLinkBatch represents a single shortened URL in a batch response
+message ShortedLinkBatch {
+  string correlation_id = 1;
+  string short_url = 2;
+}
+
+// CreateShortLinkBatchResponse represents the response for creating multiple short links
+message CreateShortLinkBatchResponse {
+  repeated ShortedLinkBatch links = 1;
+}
+
+// GetURLRequest represents a request to get the original URL
+message GetURLRequest {
+  string short_id = 1;
+}
+
+// GetURLResponse represents the response containing the original URL
+message GetURLResponse {
+  string original_url = 1;
+  bool is_deleted = 2;
+}
+
+// GetAllByUserIDRequest represents a request to get all URLs for a user
+message GetAllByUserIDRequest {
+  string user_id = 1;
+}
+
+// UserURL represents a single URL belonging to a user
+message UserURL {
+  string original_url = 1;
+  string short_url = 2;
+}
+
+// GetAllByUserIDResponse represents the response containing all user URLs
+message GetAllByUserIDResponse {
+  repeated UserURL urls = 1;
+}
+
+// DeleteBatchRequest represents a request to delete multiple URLs
+message DeleteBatchRequest {
+  repeated string short_urls = 1;
+  string user_id = 2;
+}
+
+// DeleteBatchResponse represents the response for deleting URLs
+message DeleteBatchResponse {
+  bool success = 1;
+}
+
+// GetStatsRequest represents a request to get service statistics
+message GetStatsRequest {}
+
+// GetStatsResponse represents the response containing service statistics
+message GetStatsResponse {
+  int32 urls = 1;
+  int32 users = 2;
+}
+
+// PingRequest represents a health check request
+message PingRequest {}
+
+// PingResponse represents a health check response
+message PingResponse {
+  string status = 1;
+}
