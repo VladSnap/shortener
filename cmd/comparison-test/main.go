@@ -14,6 +14,34 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+const (
+	// Timeout constants.
+	defaultTimeout    = 10 * time.Second
+	grpcServerAddr    = "127.0.0.1:9090"
+	httpServerBaseURL = "http://localhost:8080"
+	contentTypePlain  = "text/plain"
+	contentTypeJSON   = "application/json"
+	correlationID1    = "1"
+	correlationID2    = "2"
+	testURL1          = "https://httpbin.org/get"
+	testURL2          = "https://httpbin.org/json"
+	testURL3          = "https://httpbin.org/uuid"
+)
+
+// closeBody safely closes response body and logs any errors.
+func closeBody(body io.Closer) {
+	if err := body.Close(); err != nil {
+		log.Printf("Error closing response body: %v", err)
+	}
+}
+
+// closeConn safely closes connection and logs any errors.
+func closeConn(conn io.Closer) {
+	if err := conn.Close(); err != nil {
+		log.Printf("Error closing connection: %v", err)
+	}
+}
+
 func main() {
 	log.Println("=== Comprehensive HTTP vs gRPC Comparison Test ===")
 
@@ -29,48 +57,55 @@ func main() {
 }
 
 func testHTTPAPI() {
-	baseURL := "http://localhost:8080"
-
 	// Test 1: Create short link
 	log.Println("1. Creating short link via HTTP...")
-	resp, err := http.Post(baseURL+"/", "text/plain", bytes.NewBufferString("https://httpbin.org/get"))
+	resp, err := http.Post(httpServerBaseURL+"/", contentTypePlain, bytes.NewBufferString(testURL1))
 	if err != nil {
 		log.Fatalf("HTTP POST failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer closeBody(resp.Body)
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Failed to read response body: %v", err)
+	}
 	shortURL := string(body)
 	log.Printf("   HTTP short URL created: %s (status: %d)", shortURL, resp.StatusCode)
 
 	// Test 2: Create batch
 	log.Println("2. Creating batch via HTTP...")
 	batchReq := []map[string]string{
-		{"correlation_id": "1", "original_url": "https://httpbin.org/json"},
-		{"correlation_id": "2", "original_url": "https://httpbin.org/uuid"},
+		{"correlation_id": correlationID1, "original_url": testURL2},
+		{"correlation_id": correlationID2, "original_url": testURL3},
 	}
-	batchJSON, _ := json.Marshal(batchReq)
+	batchJSON, err := json.Marshal(batchReq)
+	if err != nil {
+		log.Fatalf("Failed to marshal batch request: %v", err)
+	}
 
-	resp, err = http.Post(baseURL+"/api/shorten/batch", "application/json", bytes.NewBuffer(batchJSON))
+	resp, err = http.Post(httpServerBaseURL+"/api/shorten/batch", contentTypeJSON, bytes.NewBuffer(batchJSON))
 	if err != nil {
 		log.Fatalf("HTTP batch failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer closeBody(resp.Body)
 
-	body, _ = io.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Failed to read batch response body: %v", err)
+	}
 	log.Printf("   HTTP batch response: %s (status: %d)", string(body), resp.StatusCode)
 }
 
 func testGRPCAPI() {
 	// Connect to gRPC server
-	conn, err := grpc.NewClient("127.0.0.1:9090", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(grpcServerAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}
-	defer conn.Close()
+	defer closeConn(conn)
 
 	client := pb.NewShortenerServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
 	// For testing, let the server generate user IDs automatically
@@ -79,27 +114,27 @@ func testGRPCAPI() {
 	// Test 1: Create short link
 	log.Println("1. Creating short link via gRPC...")
 	createResp, err := client.CreateShortLink(ctx, &pb.CreateShortLinkRequest{
-		OriginalUrl: "https://httpbin.org/get",
+		OriginalUrl: testURL1,
 	})
 	if err != nil {
 		log.Fatalf("gRPC CreateShortLink failed: %v", err)
 	}
-	log.Printf("   gRPC short URL created: %s (duplicate: %t)", createResp.ShortUrl, createResp.IsDuplicate)
+	log.Printf("   gRPC short URL created: %s (duplicate: %t)", createResp.GetShortUrl(), createResp.GetIsDuplicate())
 
 	// Test 2: Create batch
 	log.Println("2. Creating batch via gRPC...")
 	batchResp, err := client.CreateShortLinkBatch(ctx, &pb.CreateShortLinkBatchRequest{
 		Links: []*pb.OriginalLinkBatch{
-			{CorrelationId: "1", OriginalUrl: "https://httpbin.org/json"},
-			{CorrelationId: "2", OriginalUrl: "https://httpbin.org/uuid"},
+			{CorrelationId: correlationID1, OriginalUrl: testURL2},
+			{CorrelationId: correlationID2, OriginalUrl: testURL3},
 		},
 	})
 	if err != nil {
 		log.Fatalf("gRPC CreateShortLinkBatch failed: %v", err)
 	}
-	log.Printf("   gRPC batch created %d links:", len(batchResp.Links))
-	for _, link := range batchResp.Links {
-		log.Printf("     - ID %s: %s", link.CorrelationId, link.ShortUrl)
+	log.Printf("   gRPC batch created %d links:", len(batchResp.GetLinks()))
+	for _, link := range batchResp.GetLinks() {
+		log.Printf("     - ID %s: %s", link.GetCorrelationId(), link.GetShortUrl())
 	}
 
 	// Test 3: Get stats
@@ -108,7 +143,7 @@ func testGRPCAPI() {
 	if err != nil {
 		log.Fatalf("gRPC GetStats failed: %v", err)
 	}
-	log.Printf("   gRPC stats - URLs: %d, Users: %d", statsResp.Urls, statsResp.Users)
+	log.Printf("   gRPC stats - URLs: %d, Users: %d", statsResp.GetUrls(), statsResp.GetUsers())
 
 	// Test 4: Ping
 	log.Println("4. Ping via gRPC...")
@@ -116,5 +151,5 @@ func testGRPCAPI() {
 	if err != nil {
 		log.Fatalf("gRPC Ping failed: %v", err)
 	}
-	log.Printf("   gRPC ping response: %s", pingResp.Status)
+	log.Printf("   gRPC ping response: %s", pingResp.GetStatus())
 }

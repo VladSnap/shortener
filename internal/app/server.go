@@ -20,6 +20,12 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 )
 
+const (
+	// Server configuration constants.
+	serverShutdownTimeout = 30 * time.Second
+	signalBufferSize      = 1
+)
+
 // Handler - Интерфейс обработчика http запросов.
 type Handler interface {
 	// Handle - Обработка запроса.
@@ -151,12 +157,11 @@ func runHandleGracefulShutdown(serv *http.Server) chan struct{} {
 	idleConnsClosed := make(chan struct{})
 	// Горутина для прослушивания сигналов завершения.
 	go func() {
-		sigChan := make(chan os.Signal, 1)
+		sigChan := make(chan os.Signal, signalBufferSize)
 		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 		<-sigChan
 
-		const shtdwnTimeout = 30 * time.Second
-		shtdwnctx, cancel := context.WithTimeout(context.Background(), shtdwnTimeout)
+		shtdwnctx, cancel := context.WithTimeout(context.Background(), serverShutdownTimeout)
 		defer cancel()
 		log.Zap.Info("Termination signal received. Stopping server....")
 		if err := serv.Shutdown(shtdwnctx); err != nil && !errors.Is(err, http.ErrServerClosed) {

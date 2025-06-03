@@ -26,7 +26,16 @@ import (
 	"google.golang.org/grpc"
 )
 
-// UnifiedShortenerServer implements ShortenerServer interface and supports both HTTP and gRPC
+const (
+	// Server configuration constants.
+	shutdownTimeout   = 30 * time.Second
+	signalChannelSize = 1
+	errorChannelSize  = 2
+	httpServerCount   = 1
+	grpcServerCount   = 1
+)
+
+// UnifiedShortenerServer implements ShortenerServer interface and supports both HTTP and gRPC.
 type UnifiedShortenerServer struct {
 	opts            *config.Options
 	postHandler     Handler
@@ -40,7 +49,7 @@ type UnifiedShortenerServer struct {
 	grpcHandler     *grpchandlers.ShortenerGRPCHandler
 }
 
-// NewUnifiedShortenerServer creates a new unified server that supports both HTTP and gRPC
+// NewUnifiedShortenerServer creates a new unified server that supports both HTTP and gRPC.
 func NewUnifiedShortenerServer(
 	opts *config.Options,
 	postHandler Handler,
@@ -70,16 +79,16 @@ func NewUnifiedShortenerServer(
 	}
 }
 
-// RunServer starts both HTTP and gRPC servers
+// RunServer starts both HTTP and gRPC servers.
 func (server *UnifiedShortenerServer) RunServer() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	var wg sync.WaitGroup
-	errChan := make(chan error, 2)
+	errChan := make(chan error, errorChannelSize)
 
 	// Start HTTP server
-	wg.Add(1)
+	wg.Add(httpServerCount)
 	go func() {
 		defer wg.Done()
 		if err := server.runHTTPServer(ctx); err != nil {
@@ -88,7 +97,7 @@ func (server *UnifiedShortenerServer) RunServer() error {
 	}()
 
 	// Start gRPC server
-	wg.Add(1)
+	wg.Add(grpcServerCount)
 	go func() {
 		defer wg.Done()
 		if err := server.runGRPCServer(ctx); err != nil {
@@ -98,7 +107,7 @@ func (server *UnifiedShortenerServer) RunServer() error {
 
 	// Handle graceful shutdown
 	go func() {
-		sigChan := make(chan os.Signal, 1)
+		sigChan := make(chan os.Signal, signalChannelSize)
 		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 		<-sigChan
 		log.Zap.Info("Received shutdown signal")
@@ -126,12 +135,12 @@ func (server *UnifiedShortenerServer) RunServer() error {
 	case <-done:
 		log.Zap.Info("All servers shut down successfully")
 		return nil
-	case <-time.After(30 * time.Second):
-		return fmt.Errorf("timeout waiting for servers to shut down")
+	case <-time.After(shutdownTimeout):
+		return errors.New("timeout waiting for servers to shut down")
 	}
 }
 
-// runHTTPServer starts the HTTP server
+// runHTTPServer starts the HTTP server.
 func (server *UnifiedShortenerServer) runHTTPServer(ctx context.Context) error {
 	httpRouter := server.initRouter()
 	httpServer := &http.Server{
@@ -157,7 +166,7 @@ func (server *UnifiedShortenerServer) runHTTPServer(ctx context.Context) error {
 	<-ctx.Done()
 	log.Zap.Info("Shutting down HTTP server...")
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
 	if err := httpServer.Shutdown(shutdownCtx); err != nil {
@@ -259,7 +268,7 @@ func (server *UnifiedShortenerServer) initRouter() *chi.Mux {
 	return r
 }
 
-// listenTLS starts HTTPS server with automatic certificate management
+// listenTLS starts HTTPS server with automatic certificate management.
 func (server *UnifiedShortenerServer) listenTLS(serv *http.Server) error {
 	// Configure TLS certificate manager
 	manager := &autocert.Manager{
