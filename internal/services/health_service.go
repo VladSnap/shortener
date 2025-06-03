@@ -11,19 +11,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// HealthService provides health check functionality for the application
+// HealthService provides health check functionality for the application.
 type HealthService struct {
 	dbConnString string
 }
 
-// NewHealthService creates a new HealthService instance
+// NewHealthService creates a new HealthService instance.
 func NewHealthService(dbConnString string) *HealthService {
 	return &HealthService{
 		dbConnString: dbConnString,
 	}
 }
 
-// PingDatabase checks if the database connection is healthy
+// PingDatabase checks if the database connection is healthy.
 func (s *HealthService) PingDatabase(ctx context.Context) error {
 	if s.dbConnString == "" {
 		return nil // No database configured, consider healthy

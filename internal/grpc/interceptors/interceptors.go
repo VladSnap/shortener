@@ -1,4 +1,4 @@
-// Package interceptors provides gRPC interceptors for authentication, logging, and trusted subnet validation
+// Package interceptors provides gRPC interceptors for authentication, logging, and trusted subnet validation.
 package interceptors
 
 import (
@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// AuthInterceptor provides authentication functionality for gRPC
+// AuthInterceptor provides authentication functionality for gRPC.
 func AuthInterceptor(opts *config.Options) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -68,7 +68,7 @@ func AuthInterceptor(opts *config.Options) grpc.UnaryServerInterceptor {
 	}
 }
 
-// LoggingInterceptor provides logging functionality for gRPC
+// LoggingInterceptor provides logging functionality for gRPC.
 func LoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -117,7 +117,7 @@ func LoggingInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-// TrustedSubnetInterceptor provides trusted subnet validation for gRPC
+// TrustedSubnetInterceptor provides trusted subnet validation for gRPC.
 func TrustedSubnetInterceptor(trustedSubnet string) grpc.UnaryServerInterceptor {
 	_, subnet, _ := net.ParseCIDR(trustedSubnet)
 
@@ -170,7 +170,7 @@ func TrustedSubnetInterceptor(trustedSubnet string) grpc.UnaryServerInterceptor 
 	}
 }
 
-// generateNewUserID creates a new UUID for unauthenticated users
+// generateNewUserID creates a new UUID for unauthenticated users.
 func generateNewUserID() string {
 	id, err := uuid.NewRandom()
 	if err != nil {
@@ -180,13 +180,13 @@ func generateNewUserID() string {
 	return id.String()
 }
 
-// formatMetadata converts gRPC metadata to a readable string
+// formatMetadata converts gRPC metadata to a readable string.
 func formatMetadata(md metadata.MD) string {
 	if md == nil {
 		return ""
 	}
 
-	var parts []string
+	parts := make([]string, 0, len(md))
 	for k, v := range md {
 		parts = append(parts, fmt.Sprintf("%s: %v", k, v))
 	}

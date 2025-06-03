@@ -195,14 +195,15 @@ func (h *ShortenerGRPCHandler) DeleteBatch(ctx context.Context, req *pb.DeleteBa
 	return &pb.DeleteBatchResponse{Success: true}, nil
 }
 
-// GetStats returns service statistics (only for trusted subnets)
+// GetStats returns service statistics (only for trusted subnets).
 func (h *ShortenerGRPCHandler) GetStats(ctx context.Context, req *pb.GetStatsRequest) (*pb.GetStatsResponse, error) {
 	// Note: In a real implementation, you would need to implement trusted subnet checking for gRPC
 	// This is more complex in gRPC as you need to extract the client IP from the connection
 
 	stats, err := h.service.GetStats(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get stats: %v", err))
+		wrappedErr := fmt.Errorf("failed to get stats: %w", err)
+		return nil, status.Error(codes.Internal, wrappedErr.Error())
 	}
 
 	return &pb.GetStatsResponse{
@@ -211,22 +212,23 @@ func (h *ShortenerGRPCHandler) GetStats(ctx context.Context, req *pb.GetStatsReq
 	}, nil
 }
 
-// Ping checks service health
+// Ping checks service health.
 func (h *ShortenerGRPCHandler) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingResponse, error) {
 	// Check database connection if configured
 	err := h.healthService.PingDatabase(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Unavailable, fmt.Sprintf("database not available: %v", err))
+		wrappedErr := fmt.Errorf("database not available: %w", err)
+		return nil, status.Error(codes.Unavailable, wrappedErr.Error())
 	}
 
 	return &pb.PingResponse{Status: "OK"}, nil
 }
 
-// StartGRPCServer starts the gRPC server on the specified address
+// StartGRPCServer starts the gRPC server on the specified address.
 func StartGRPCServer(addr string, handler *ShortenerGRPCHandler) (*grpc.Server, net.Listener, error) {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to listen: %v", err)
+		return nil, nil, fmt.Errorf("failed to listen: %w", err)
 	}
 
 	s := grpc.NewServer()
