@@ -73,11 +73,13 @@ func testGRPCAPI() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// For testing, let the server generate user IDs automatically
+	// In a real client, you would include properly signed auth-cookie metadata
+
 	// Test 1: Create short link
 	log.Println("1. Creating short link via gRPC...")
 	createResp, err := client.CreateShortLink(ctx, &pb.CreateShortLinkRequest{
 		OriginalUrl: "https://httpbin.org/get",
-		UserId:      "grpc-test-user",
 	})
 	if err != nil {
 		log.Fatalf("gRPC CreateShortLink failed: %v", err)
@@ -87,7 +89,6 @@ func testGRPCAPI() {
 	// Test 2: Create batch
 	log.Println("2. Creating batch via gRPC...")
 	batchResp, err := client.CreateShortLinkBatch(ctx, &pb.CreateShortLinkBatchRequest{
-		UserId: "grpc-test-user",
 		Links: []*pb.OriginalLinkBatch{
 			{CorrelationId: "1", OriginalUrl: "https://httpbin.org/json"},
 			{CorrelationId: "2", OriginalUrl: "https://httpbin.org/uuid"},

@@ -31,7 +31,6 @@ service ShortenerService {
 // CreateShortLinkRequest represents a request to create a single short link
 message CreateShortLinkRequest {
   string original_url = 1;
-  string user_id = 2;
 }
 
 // CreateShortLinkResponse represents the response for creating a short link
@@ -49,7 +48,6 @@ message OriginalLinkBatch {
 // CreateShortLinkBatchRequest represents a request to create multiple short links
 message CreateShortLinkBatchRequest {
   repeated OriginalLinkBatch links = 1;
-  string user_id = 2;
 }
 
 // ShortedLinkBatch represents a single shortened URL in a batch response
@@ -76,7 +74,7 @@ message GetURLResponse {
 
 // GetAllByUserIDRequest represents a request to get all URLs for a user
 message GetAllByUserIDRequest {
-  string user_id = 1;
+  // User ID is extracted from authentication context by interceptors
 }
 
 // UserURL represents a single URL belonging to a user
@@ -93,7 +91,6 @@ message GetAllByUserIDResponse {
 // DeleteBatchRequest represents a request to delete multiple URLs
 message DeleteBatchRequest {
   repeated string short_urls = 1;
-  string user_id = 2;
 }
 
 // DeleteBatchResponse represents the response for deleting URLs

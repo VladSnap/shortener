@@ -18,7 +18,7 @@ func main() { // Connect to gRPC server
 	defer conn.Close()
 
 	client := pb.NewShortenerServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
 	// Test Ping
@@ -27,13 +27,14 @@ func main() { // Connect to gRPC server
 	if err != nil {
 		log.Fatalf("Ping failed: %v", err)
 	}
-	log.Printf("Ping response: %s\n", pingResp.Status)
-
-	// Test CreateShortLink
+	log.Printf("Ping response: %s\n", pingResp.Status) // Test CreateShortLink
 	log.Println("Testing CreateShortLink...")
+
+	// For testing, let the server generate a new user ID
+	// In a real client, you would include a properly signed auth-cookie
+
 	createResp, err := client.CreateShortLink(ctx, &pb.CreateShortLinkRequest{
 		OriginalUrl: "https://example.com",
-		UserId:      "test-user-123",
 	})
 	if err != nil {
 		log.Fatalf("CreateShortLink failed: %v", err)

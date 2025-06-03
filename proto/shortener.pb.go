@@ -25,7 +25,6 @@ const (
 type CreateShortLinkRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OriginalUrl   string                 `protobuf:"bytes,1,opt,name=original_url,json=originalUrl,proto3" json:"original_url,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -63,13 +62,6 @@ func (*CreateShortLinkRequest) Descriptor() ([]byte, []int) {
 func (x *CreateShortLinkRequest) GetOriginalUrl() string {
 	if x != nil {
 		return x.OriginalUrl
-	}
-	return ""
-}
-
-func (x *CreateShortLinkRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
 	}
 	return ""
 }
@@ -184,7 +176,6 @@ func (x *OriginalLinkBatch) GetOriginalUrl() string {
 type CreateShortLinkBatchRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Links         []*OriginalLinkBatch   `protobuf:"bytes,1,rep,name=links,proto3" json:"links,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -224,13 +215,6 @@ func (x *CreateShortLinkBatchRequest) GetLinks() []*OriginalLinkBatch {
 		return x.Links
 	}
 	return nil
-}
-
-func (x *CreateShortLinkBatchRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
 }
 
 // ShortedLinkBatch represents a single shortened URL in a batch response
@@ -432,7 +416,6 @@ func (x *GetURLResponse) GetIsDeleted() bool {
 // GetAllByUserIDRequest represents a request to get all URLs for a user
 type GetAllByUserIDRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -465,13 +448,6 @@ func (x *GetAllByUserIDRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetAllByUserIDRequest.ProtoReflect.Descriptor instead.
 func (*GetAllByUserIDRequest) Descriptor() ([]byte, []int) {
 	return file_proto_shortener_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *GetAllByUserIDRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
 }
 
 // UserURL represents a single URL belonging to a user
@@ -576,7 +552,6 @@ func (x *GetAllByUserIDResponse) GetUrls() []*UserURL {
 type DeleteBatchRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ShortUrls     []string               `protobuf:"bytes,1,rep,name=short_urls,json=shortUrls,proto3" json:"short_urls,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -616,13 +591,6 @@ func (x *DeleteBatchRequest) GetShortUrls() []string {
 		return x.ShortUrls
 	}
 	return nil
-}
-
-func (x *DeleteBatchRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
 }
 
 // DeleteBatchResponse represents the response for deleting URLs
@@ -846,19 +814,17 @@ var File_proto_shortener_proto protoreflect.FileDescriptor
 
 const file_proto_shortener_proto_rawDesc = "" +
 	"\n" +
-	"\x15proto/shortener.proto\x12\tshortener\"T\n" +
+	"\x15proto/shortener.proto\x12\tshortener\";\n" +
 	"\x16CreateShortLinkRequest\x12!\n" +
-	"\foriginal_url\x18\x01 \x01(\tR\voriginalUrl\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\"Y\n" +
+	"\foriginal_url\x18\x01 \x01(\tR\voriginalUrl\"Y\n" +
 	"\x17CreateShortLinkResponse\x12\x1b\n" +
 	"\tshort_url\x18\x01 \x01(\tR\bshortUrl\x12!\n" +
 	"\fis_duplicate\x18\x02 \x01(\bR\visDuplicate\"]\n" +
 	"\x11OriginalLinkBatch\x12%\n" +
 	"\x0ecorrelation_id\x18\x01 \x01(\tR\rcorrelationId\x12!\n" +
-	"\foriginal_url\x18\x02 \x01(\tR\voriginalUrl\"j\n" +
+	"\foriginal_url\x18\x02 \x01(\tR\voriginalUrl\"Q\n" +
 	"\x1bCreateShortLinkBatchRequest\x122\n" +
-	"\x05links\x18\x01 \x03(\v2\x1c.shortener.OriginalLinkBatchR\x05links\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\"V\n" +
+	"\x05links\x18\x01 \x03(\v2\x1c.shortener.OriginalLinkBatchR\x05links\"V\n" +
 	"\x10ShortedLinkBatch\x12%\n" +
 	"\x0ecorrelation_id\x18\x01 \x01(\tR\rcorrelationId\x12\x1b\n" +
 	"\tshort_url\x18\x02 \x01(\tR\bshortUrl\"Q\n" +
@@ -869,18 +835,16 @@ const file_proto_shortener_proto_rawDesc = "" +
 	"\x0eGetURLResponse\x12!\n" +
 	"\foriginal_url\x18\x01 \x01(\tR\voriginalUrl\x12\x1d\n" +
 	"\n" +
-	"is_deleted\x18\x02 \x01(\bR\tisDeleted\"0\n" +
-	"\x15GetAllByUserIDRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"I\n" +
+	"is_deleted\x18\x02 \x01(\bR\tisDeleted\"\x17\n" +
+	"\x15GetAllByUserIDRequest\"I\n" +
 	"\aUserURL\x12!\n" +
 	"\foriginal_url\x18\x01 \x01(\tR\voriginalUrl\x12\x1b\n" +
 	"\tshort_url\x18\x02 \x01(\tR\bshortUrl\"@\n" +
 	"\x16GetAllByUserIDResponse\x12&\n" +
-	"\x04urls\x18\x01 \x03(\v2\x12.shortener.UserURLR\x04urls\"L\n" +
+	"\x04urls\x18\x01 \x03(\v2\x12.shortener.UserURLR\x04urls\"3\n" +
 	"\x12DeleteBatchRequest\x12\x1d\n" +
 	"\n" +
-	"short_urls\x18\x01 \x03(\tR\tshortUrls\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\"/\n" +
+	"short_urls\x18\x01 \x03(\tR\tshortUrls\"/\n" +
 	"\x13DeleteBatchResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x11\n" +
 	"\x0fGetStatsRequest\"<\n" +

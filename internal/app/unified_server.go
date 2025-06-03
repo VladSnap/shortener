@@ -14,6 +14,7 @@ import (
 
 	"github.com/VladSnap/shortener/internal/config"
 	grpchandlers "github.com/VladSnap/shortener/internal/grpc/handlers"
+	"github.com/VladSnap/shortener/internal/grpc/interceptors"
 	"github.com/VladSnap/shortener/internal/handlers"
 	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/middlewares"
@@ -174,7 +175,27 @@ func (server *UnifiedShortenerServer) runGRPCServer(ctx context.Context) error {
 		return fmt.Errorf("failed to listen on gRPC address %s: %w", server.opts.GRPCAddress, err)
 	}
 
-	grpcServer := grpc.NewServer()
+	// Create gRPC server with interceptors
+	var grpcServer *grpc.Server
+	if server.opts.TrustedSubnet != "" {
+		// Add trusted subnet interceptor for stats endpoint
+		grpcServer = grpc.NewServer(
+			grpc.ChainUnaryInterceptor(
+				interceptors.LoggingInterceptor(),
+				interceptors.AuthInterceptor(server.opts),
+				interceptors.TrustedSubnetInterceptor(server.opts.TrustedSubnet),
+			),
+		)
+	} else {
+		// No trusted subnet configured
+		grpcServer = grpc.NewServer(
+			grpc.ChainUnaryInterceptor(
+				interceptors.LoggingInterceptor(),
+				interceptors.AuthInterceptor(server.opts),
+			),
+		)
+	}
+
 	pb.RegisterShortenerServiceServer(grpcServer, server.grpcHandler)
 
 	// Start gRPC server in a goroutine

@@ -2,13 +2,19 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/VladSnap/shortener/internal/config"
+	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/handlers"
+	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/services"
 	pb "github.com/VladSnap/shortener/proto"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -44,7 +50,13 @@ func (h *ShortenerGRPCHandler) CreateShortLink(ctx context.Context, req *pb.Crea
 		return nil, status.Error(codes.InvalidArgument, "original_url is required")
 	}
 
-	shortedLink, err := h.service.CreateShortLink(ctx, req.OriginalUrl, req.UserId)
+	// Extract user ID from context (set by auth interceptor)
+	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
+	if !ok {
+		return nil, status.Error(codes.Internal, "user ID not found in context")
+	}
+
+	shortedLink, err := h.service.CreateShortLink(ctx, req.OriginalUrl, userID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create short link: %v", err))
 	}
@@ -61,6 +73,12 @@ func (h *ShortenerGRPCHandler) CreateShortLinkBatch(ctx context.Context, req *pb
 		return &pb.CreateShortLinkBatchResponse{Links: []*pb.ShortedLinkBatch{}}, nil
 	}
 
+	// Extract user ID from context (set by auth interceptor)
+	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
+	if !ok {
+		return nil, status.Error(codes.Internal, "user ID not found in context")
+	}
+
 	// Convert gRPC request to service model
 	originalLinks := make([]*services.OriginalLink, 0, len(req.Links))
 	for _, link := range req.Links {
@@ -73,7 +91,7 @@ func (h *ShortenerGRPCHandler) CreateShortLinkBatch(ctx context.Context, req *pb
 		})
 	}
 
-	shortedLinks, err := h.service.CreateShortLinkBatch(ctx, originalLinks, req.UserId)
+	shortedLinks, err := h.service.CreateShortLinkBatch(ctx, originalLinks, userID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create batch: %v", err))
 	}
@@ -117,11 +135,13 @@ func (h *ShortenerGRPCHandler) GetURL(ctx context.Context, req *pb.GetURLRequest
 
 // GetAllByUserID retrieves all URLs shortened by a specific user
 func (h *ShortenerGRPCHandler) GetAllByUserID(ctx context.Context, req *pb.GetAllByUserIDRequest) (*pb.GetAllByUserIDResponse, error) {
-	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	// Extract user ID from context (set by auth interceptor)
+	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
+	if !ok {
+		return nil, status.Error(codes.Internal, "user ID not found in context")
 	}
 
-	shortedLinks, err := h.service.GetAllByUserID(ctx, req.UserId)
+	shortedLinks, err := h.service.GetAllByUserID(ctx, userID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get user URLs: %v", err))
 	}
@@ -148,8 +168,10 @@ func (h *ShortenerGRPCHandler) DeleteBatch(ctx context.Context, req *pb.DeleteBa
 		return nil, status.Error(codes.InvalidArgument, "short_urls cannot be empty")
 	}
 
-	if req.UserId == "" {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	// Extract user ID from context (set by auth interceptor)
+	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
+	if !ok {
+		return nil, status.Error(codes.Internal, "user ID not found in context")
 	}
 
 	// Create channel for deletion
@@ -162,7 +184,7 @@ func (h *ShortenerGRPCHandler) DeleteBatch(ctx context.Context, req *pb.DeleteBa
 		if shortURL == "" {
 			return nil, status.Error(codes.InvalidArgument, "short_url cannot be empty")
 		}
-		deleteSID := services.NewDeleteShortID(shortURL, req.UserId)
+		deleteSID := services.NewDeleteShortID(shortURL, userID)
 		select {
 		case toDeleteChan <- deleteSID:
 		case <-ctx.Done():
