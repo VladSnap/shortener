@@ -2,19 +2,14 @@ package handlers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/VladSnap/shortener/internal/config"
 	"github.com/VladSnap/shortener/internal/constants"
 	"github.com/VladSnap/shortener/internal/handlers"
-	"github.com/VladSnap/shortener/internal/log"
 	"github.com/VladSnap/shortener/internal/services"
 	pb "github.com/VladSnap/shortener/proto"
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -23,10 +18,11 @@ import (
 // ShortenerGRPCHandler implements the gRPC service interface
 type ShortenerGRPCHandler struct {
 	pb.UnimplementedShortenerServiceServer
-	service      handlers.ShorterService
-	deleteWorker handlers.DeleterWorker
-	baseURL      string
-	opts         *config.Options
+	service       handlers.ShorterService
+	deleteWorker  handlers.DeleterWorker
+	baseURL       string
+	opts          *config.Options
+	healthService *services.HealthService
 }
 
 // NewShortenerGRPCHandler creates a new gRPC handler
@@ -37,10 +33,11 @@ func NewShortenerGRPCHandler(
 	opts *config.Options,
 ) *ShortenerGRPCHandler {
 	return &ShortenerGRPCHandler{
-		service:      service,
-		deleteWorker: deleteWorker,
-		baseURL:      baseURL,
-		opts:         opts,
+		service:       service,
+		deleteWorker:  deleteWorker,
+		baseURL:       baseURL,
+		opts:          opts,
+		healthService: services.NewHealthService(opts.DataBaseConnString),
 	}
 }
 
@@ -216,8 +213,11 @@ func (h *ShortenerGRPCHandler) GetStats(ctx context.Context, req *pb.GetStatsReq
 
 // Ping checks service health
 func (h *ShortenerGRPCHandler) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingResponse, error) {
-	// Note: In a real implementation, you would want to check the database connection here
-	// similar to the HTTP ping handler, but for simplicity we'll just return OK
+	// Check database connection if configured
+	err := h.healthService.PingDatabase(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unavailable, fmt.Sprintf("database not available: %v", err))
+	}
 
 	return &pb.PingResponse{Status: "OK"}, nil
 }

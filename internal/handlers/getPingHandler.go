@@ -1,26 +1,25 @@
 package handlers
 
 import (
-	"context"
-	"database/sql"
 	"net/http"
-	"time"
 
 	"github.com/VladSnap/shortener/internal/config"
 	"github.com/VladSnap/shortener/internal/log"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/VladSnap/shortener/internal/services"
 	"go.uber.org/zap"
 )
 
 // GetPingHandler - Обработчик запроса проверки доступности базы данных.
 type GetPingHandler struct {
-	opts *config.Options
+	opts          *config.Options
+	healthService *services.HealthService
 }
 
 // NewGetPingHandler - Создает новую структуру GetPingHandler с указателем.
 func NewGetPingHandler(opts *config.Options) *GetPingHandler {
 	handler := new(GetPingHandler)
 	handler.opts = opts
+	handler.healthService = services.NewHealthService(opts.DataBaseConnString)
 	return handler
 }
 
@@ -31,23 +30,9 @@ func (handler *GetPingHandler) Handle(res http.ResponseWriter, req *http.Request
 		return
 	}
 
-	db, err := sql.Open("pgx", handler.opts.DataBaseConnString)
+	ctx := req.Context()
+	err := handler.healthService.PingDatabase(ctx)
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer func() {
-		err := db.Close()
-		if err != nil {
-			log.Zap.Error("failed database connection close", zap.Error(err))
-		}
-	}()
-
-	const timeOutPingSec = 5
-	ctx, cancel := context.WithTimeout(context.Background(), timeOutPingSec*time.Second)
-	defer cancel()
-
-	if err = db.PingContext(ctx); err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
