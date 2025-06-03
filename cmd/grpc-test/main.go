@@ -31,16 +31,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}
-	defer closeConn(conn)
 
 	client := pb.NewShortenerServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
 
 	// Test Ping
 	log.Println("Testing Ping...")
 	pingResp, err := client.Ping(ctx, &pb.PingRequest{})
 	if err != nil {
+		cancel()
+		closeConn(conn)
 		log.Fatalf("Ping failed: %v", err)
 	}
 	log.Printf("Ping response: %s\n", pingResp.GetStatus())
@@ -68,4 +68,8 @@ func main() {
 	log.Printf("Stats - URLs: %d, Users: %d\n", statsResp.GetUrls(), statsResp.GetUsers())
 
 	log.Println("All gRPC tests completed successfully!")
+
+	// Clean up resources
+	cancel()
+	closeConn(conn)
 }

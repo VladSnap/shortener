@@ -63,9 +63,9 @@ func testHTTPAPI() {
 	if err != nil {
 		log.Fatalf("HTTP POST failed: %v", err)
 	}
-	defer closeBody(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
+	closeBody(resp.Body)
 	if err != nil {
 		log.Fatalf("Failed to read response body: %v", err)
 	}
@@ -87,9 +87,9 @@ func testHTTPAPI() {
 	if err != nil {
 		log.Fatalf("HTTP batch failed: %v", err)
 	}
-	defer closeBody(resp.Body)
 
 	body, err = io.ReadAll(resp.Body)
+	closeBody(resp.Body)
 	if err != nil {
 		log.Fatalf("Failed to read batch response body: %v", err)
 	}
@@ -102,11 +102,9 @@ func testGRPCAPI() {
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}
-	defer closeConn(conn)
 
 	client := pb.NewShortenerServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
 
 	// For testing, let the server generate user IDs automatically
 	// In a real client, you would include properly signed auth-cookie metadata
@@ -117,6 +115,8 @@ func testGRPCAPI() {
 		OriginalUrl: testURL1,
 	})
 	if err != nil {
+		cancel()
+		closeConn(conn)
 		log.Fatalf("gRPC CreateShortLink failed: %v", err)
 	}
 	log.Printf("   gRPC short URL created: %s (duplicate: %t)", createResp.GetShortUrl(), createResp.GetIsDuplicate())
@@ -152,4 +152,8 @@ func testGRPCAPI() {
 		log.Fatalf("gRPC Ping failed: %v", err)
 	}
 	log.Printf("   gRPC ping response: %s", pingResp.GetStatus())
+
+	// Clean up resources
+	cancel()
+	closeConn(conn)
 }
