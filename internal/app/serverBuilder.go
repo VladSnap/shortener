@@ -50,8 +50,19 @@ func CreateServer(opts *config.Options, resMng *services.ResourceManager) (Short
 	urlsHandler := handlers.NewUrlsHandler(shorterService, opts.BaseURL)
 	deleteHandler := handlers.NewDeleteHandler(deleteWorker)
 	getStatsHandler := handlers.NewGetStatsHandler(opts, shorterService)
-
-	server := NewChiShortenerServer(opts, postHandler, getHandler, shortenHandler,
-		pingHandler, batchHandler, urlsHandler, deleteHandler, getStatsHandler)
+	// Create the unified server that supports both HTTP and gRPC
+	server := NewUnifiedShortenerServer(
+		opts,
+		postHandler,
+		getHandler,
+		shortenHandler,
+		pingHandler,
+		batchHandler,
+		urlsHandler,
+		deleteHandler,
+		getStatsHandler,
+		shorterService,
+		deleteWorker,
+	)
 	return server, nil
 }
