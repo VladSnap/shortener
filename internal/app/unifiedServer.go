@@ -35,6 +35,18 @@ const (
 	grpcServerCount   = 1
 )
 
+// Handler - Интерфейс обработчика http запросов.
+type Handler interface {
+	// Handle - Обработка запроса.
+	Handle(res http.ResponseWriter, req *http.Request)
+}
+
+// ShortenerServer - Интерфейс сервера сокращателя ссылок.
+type ShortenerServer interface {
+	// RunServer - Запускает сервер.
+	RunServer() error
+}
+
 // UnifiedShortenerServer implements ShortenerServer interface and supports both HTTP and gRPC.
 type UnifiedShortenerServer struct {
 	opts            *config.Options
@@ -49,33 +61,93 @@ type UnifiedShortenerServer struct {
 	grpcHandler     *grpchandlers.ShortenerGRPCHandler
 }
 
-// NewUnifiedShortenerServer creates a new unified server that supports both HTTP and gRPC.
-func NewUnifiedShortenerServer(
-	opts *config.Options,
-	postHandler Handler,
-	getHandler Handler,
-	shortenHandler Handler,
-	pingHandler Handler,
-	batchHandler Handler,
-	urlsHandler Handler,
-	deleteHandler Handler,
-	getStatsHandler Handler,
-	service handlers.ShorterService,
-	deleteWorker handlers.DeleterWorker,
-) *UnifiedShortenerServer {
-	grpcHandler := grpchandlers.NewShortenerGRPCHandler(service, deleteWorker, opts.BaseURL, opts)
+// UnifiedServerOption представляет функцию для настройки UnifiedShortenerServer.
+type UnifiedServerOption func(*UnifiedShortenerServer) error
 
-	return &UnifiedShortenerServer{
-		opts:            opts,
-		postHandler:     postHandler,
-		getHandler:      getHandler,
-		shortenHandler:  shortenHandler,
-		pingHandler:     pingHandler,
-		batchHandler:    batchHandler,
-		urlsHandler:     urlsHandler,
-		deleteHandler:   deleteHandler,
-		getStatsHandler: getStatsHandler,
-		grpcHandler:     grpcHandler,
+// NewUnifiedShortenerServer создает сервер используя Options pattern.
+func NewUnifiedShortenerServer(opts *config.Options, options ...UnifiedServerOption) (*UnifiedShortenerServer, error) {
+	server := &UnifiedShortenerServer{
+		opts: opts,
+	}
+
+	for _, option := range options {
+		if err := option(server); err != nil {
+			return nil, err
+		}
+	}
+
+	return server, nil
+}
+
+// WithUnifiedPostHandler устанавливает обработчик POST запросов.
+func WithUnifiedPostHandler(handler Handler) UnifiedServerOption {
+	return func(server *UnifiedShortenerServer) error {
+		server.postHandler = handler
+		return nil
+	}
+}
+
+// WithUnifiedGetHandler устанавливает обработчик GET запросов.
+func WithUnifiedGetHandler(handler Handler) UnifiedServerOption {
+	return func(server *UnifiedShortenerServer) error {
+		server.getHandler = handler
+		return nil
+	}
+}
+
+// WithUnifiedShortenHandler устанавливает обработчик сокращения ссылок.
+func WithUnifiedShortenHandler(handler Handler) UnifiedServerOption {
+	return func(server *UnifiedShortenerServer) error {
+		server.shortenHandler = handler
+		return nil
+	}
+}
+
+// WithUnifiedPingHandler устанавливает обработчик ping запросов.
+func WithUnifiedPingHandler(handler Handler) UnifiedServerOption {
+	return func(server *UnifiedShortenerServer) error {
+		server.pingHandler = handler
+		return nil
+	}
+}
+
+// WithUnifiedBatchHandler устанавливает обработчик batch запросов.
+func WithUnifiedBatchHandler(handler Handler) UnifiedServerOption {
+	return func(server *UnifiedShortenerServer) error {
+		server.batchHandler = handler
+		return nil
+	}
+}
+
+// WithUnifiedUrlsHandler устанавливает обработчик URLs запросов.
+func WithUnifiedUrlsHandler(handler Handler) UnifiedServerOption {
+	return func(server *UnifiedShortenerServer) error {
+		server.urlsHandler = handler
+		return nil
+	}
+}
+
+// WithUnifiedDeleteHandler устанавливает обработчик delete запросов.
+func WithUnifiedDeleteHandler(handler Handler) UnifiedServerOption {
+	return func(server *UnifiedShortenerServer) error {
+		server.deleteHandler = handler
+		return nil
+	}
+}
+
+// WithUnifiedGetStatsHandler устанавливает обработчик статистики.
+func WithUnifiedGetStatsHandler(handler Handler) UnifiedServerOption {
+	return func(server *UnifiedShortenerServer) error {
+		server.getStatsHandler = handler
+		return nil
+	}
+}
+
+// WithGRPCHandler устанавливает gRPC обработчик.
+func WithGRPCHandler(service handlers.ShorterService, deleteWorker handlers.DeleterWorker, baseURL string, opts *config.Options) UnifiedServerOption {
+	return func(server *UnifiedShortenerServer) error {
+		server.grpcHandler = grpchandlers.NewShortenerGRPCHandler(service, deleteWorker, baseURL, opts)
+		return nil
 	}
 }
 
@@ -177,7 +249,7 @@ func (server *UnifiedShortenerServer) runHTTPServer(ctx context.Context) error {
 	return nil
 }
 
-// runGRPCServer starts the gRPC server
+// runGRPCServer starts the gRPC server.
 func (server *UnifiedShortenerServer) runGRPCServer(ctx context.Context) error {
 	lis, err := net.Listen("tcp", server.opts.GRPCAddress)
 	if err != nil {
@@ -237,7 +309,7 @@ func (server *UnifiedShortenerServer) runGRPCServer(ctx context.Context) error {
 	return nil
 }
 
-// initRouter initializes the HTTP router (same as ChiShortenerServer)
+// initRouter initializes the HTTP router (same as ChiShortenerServer).
 func (server *UnifiedShortenerServer) initRouter() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middlewares.LogMiddleware)
