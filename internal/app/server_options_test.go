@@ -137,8 +137,7 @@ func BenchmarkServerCreation(b *testing.B) {
 		FileStoragePath:    "",
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		resMng := services.NewResourceManager()
 		server, err := CreateServer(cfg, resMng)
 		if err != nil {
@@ -162,8 +161,7 @@ func BenchmarkBuilderPattern(b *testing.B) {
 		FileStoragePath:    "",
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		resMng := services.NewResourceManager()
 		server, err := NewServerBuilder(cfg, resMng).
 			WithRepository().
