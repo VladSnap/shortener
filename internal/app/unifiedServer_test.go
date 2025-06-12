@@ -11,12 +11,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestNewUnifiedShortenerServerWithOptions tests the creation of UnifiedShortenerServer with various options.
 func TestNewUnifiedShortenerServerWithOptions(t *testing.T) {
 	cfg := &config.Options{
 		BaseURL: "http://localhost:8080",
 	}
 	resMng := services.NewResourceManager()
-	defer resMng.Cleanup()
+	defer func() {
+		if err := resMng.Cleanup(); err != nil {
+			t.Fatalf("failed to cleanup resources: %v", err)
+		}
+	}()
 
 	t.Run("Creates server with individual options", func(t *testing.T) {
 		// Создаем необходимые зависимости
@@ -24,7 +29,11 @@ func TestNewUnifiedShortenerServerWithOptions(t *testing.T) {
 		shorterService := services.NewNaiveShorterService(repo)
 		deleteWorker := handlers.NewDeleteWorker(shorterService)
 		deleteWorker.RunWork()
-		defer deleteWorker.Close()
+		defer func() {
+			if err := deleteWorker.Close(); err != nil {
+				t.Errorf("failed to close deleteWorker: %v", err)
+			}
+		}()
 
 		// Создаем обработчики
 		postHandler := handlers.NewPostHandler(shorterService, cfg.BaseURL)
@@ -68,6 +77,7 @@ func TestNewUnifiedShortenerServerWithOptions(t *testing.T) {
 	})
 }
 
+// TestUnifiedServerOptionsValidation tests the validation of options for UnifiedShortenerServer.
 func TestUnifiedServerOptionsValidation(t *testing.T) {
 	cfg := &config.Options{
 		BaseURL: "http://localhost:8080",
@@ -78,7 +88,11 @@ func TestUnifiedServerOptionsValidation(t *testing.T) {
 		shorterService := services.NewNaiveShorterService(repo)
 		deleteWorker := handlers.NewDeleteWorker(shorterService)
 		deleteWorker.RunWork()
-		defer deleteWorker.Close()
+		defer func() {
+			if err := deleteWorker.Close(); err != nil {
+				t.Errorf("failed to close deleteWorker: %v", err)
+			}
+		}()
 
 		postHandler := handlers.NewPostHandler(shorterService, cfg.BaseURL)
 		getHandler := handlers.NewGetHandler(shorterService)

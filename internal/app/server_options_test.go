@@ -10,12 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestServerOptions тестирует создание и применение опций сервера.
 func TestServerOptions(t *testing.T) {
 	cfg := &config.Options{
 		BaseURL: "http://localhost:8080",
 	}
 	resMng := services.NewResourceManager()
-	defer resMng.Cleanup()
+	defer func() {
+		if err := resMng.Cleanup(); err != nil {
+			t.Errorf("failed to cleanup ResourceManager: %v", err)
+		}
+	}()
 
 	t.Run("NewServerOptions creates valid options", func(t *testing.T) {
 		options := NewServerOptions(cfg, resMng)
@@ -50,6 +55,7 @@ func TestServerOptions(t *testing.T) {
 	})
 }
 
+// TestServerBuilder тестирует создание сервера с использованием паттерна Builder.
 func TestServerBuilder(t *testing.T) {
 	cfg := &config.Options{
 		BaseURL:            "http://localhost:8080",
@@ -57,7 +63,11 @@ func TestServerBuilder(t *testing.T) {
 		FileStoragePath:    "",
 	}
 	resMng := services.NewResourceManager()
-	defer resMng.Cleanup()
+	defer func() {
+		if err := resMng.Cleanup(); err != nil {
+			t.Errorf("failed to cleanup ResourceManager: %v", err)
+		}
+	}()
 
 	t.Run("Builder creates valid server", func(t *testing.T) {
 		server, err := NewServerBuilder(cfg, resMng).
@@ -97,6 +107,7 @@ func TestServerBuilder(t *testing.T) {
 	})
 }
 
+// TestServerBuilder тестирует создание сервера с использованием паттерна Builder.
 func TestCreateServerFunction(t *testing.T) {
 	cfg := &config.Options{
 		BaseURL:            "http://localhost:8080",
@@ -104,7 +115,11 @@ func TestCreateServerFunction(t *testing.T) {
 		FileStoragePath:    "",
 	}
 	resMng := services.NewResourceManager()
-	defer resMng.Cleanup()
+	defer func() {
+		if err := resMng.Cleanup(); err != nil {
+			t.Errorf("failed to cleanup ResourceManager: %v", err)
+		}
+	}()
 
 	t.Run("CreateServer creates valid server", func(t *testing.T) {
 		server, err := CreateServer(cfg, resMng)
@@ -114,7 +129,7 @@ func TestCreateServerFunction(t *testing.T) {
 	})
 }
 
-// BenchmarkServerCreation измеряет производительность создания сервера
+// BenchmarkServerCreation измеряет производительность создания сервера.
 func BenchmarkServerCreation(b *testing.B) {
 	cfg := &config.Options{
 		BaseURL:            "http://localhost:8080",
@@ -132,11 +147,14 @@ func BenchmarkServerCreation(b *testing.B) {
 		if server == nil {
 			b.Fatal("server is nil")
 		}
-		resMng.Cleanup()
+		err = resMng.Cleanup()
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
-// BenchmarkBuilderPattern измеряет производительность builder pattern
+// BenchmarkBuilderPattern измеряет производительность builder pattern.
 func BenchmarkBuilderPattern(b *testing.B) {
 	cfg := &config.Options{
 		BaseURL:            "http://localhost:8080",
@@ -152,12 +170,16 @@ func BenchmarkBuilderPattern(b *testing.B) {
 			WithServices().
 			WithHandlers().
 			Build()
+
 		if err != nil {
 			b.Fatal(err)
 		}
 		if server == nil {
 			b.Fatal("server is nil")
 		}
-		resMng.Cleanup()
+		err = resMng.Cleanup()
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }

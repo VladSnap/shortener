@@ -67,7 +67,8 @@ func testHTTPAPI() {
 	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
-		log.Fatalf("Failed to read response body: %v", err)
+		log.Printf("Failed to read response body: %v", err)
+		return
 	}
 	shortURL := string(body)
 	log.Printf("   HTTP short URL created: %s (status: %d)", shortURL, resp.StatusCode)
@@ -80,17 +81,20 @@ func testHTTPAPI() {
 	}
 	batchJSON, err := json.Marshal(batchReq)
 	if err != nil {
-		log.Fatalf("Failed to marshal batch request: %v", err)
+		log.Printf("Failed to marshal batch request: %v", err)
+		return
 	}
 
 	resp, err = http.Post(httpServerBaseURL+"/api/shorten/batch", contentTypeJSON, bytes.NewBuffer(batchJSON))
 	if err != nil {
-		log.Fatalf("HTTP batch failed: %v", err)
+		log.Printf("HTTP batch failed: %v", err)
+		return
 	}
 	defer closeBody(resp.Body)
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("Failed to read batch response body: %v", err)
+		log.Printf("Failed to read batch response body: %v", err)
+		return
 	}
 	log.Printf("   HTTP batch response: %s (status: %d)", string(body), resp.StatusCode)
 }

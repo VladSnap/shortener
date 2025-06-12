@@ -29,6 +29,10 @@ const (
 	errShortURLsEmpty      = "short_urls cannot be empty"
 	errShortURLEmpty       = "short_url cannot be empty"
 	errContextDeadline     = "context deadline exceeded"
+
+	validationErrorFormat = "validation error: %w"
+	contextError          = "context error: %w"
+	serviceError          = "service error: %w"
 )
 
 // ShortenerGRPCHandler implements the gRPC service interface.
@@ -63,19 +67,18 @@ func (h *ShortenerGRPCHandler) CreateShortLink(
 	req *pb.CreateShortLinkRequest,
 ) (*pb.CreateShortLinkResponse, error) {
 	if req.GetOriginalUrl() == "" {
-		return nil, status.Error(codes.InvalidArgument, errOriginalURLRequired)
+		return nil, fmt.Errorf(validationErrorFormat, status.Error(codes.InvalidArgument, errOriginalURLRequired))
 	}
 
 	// Extract user ID from context (set by auth interceptor)
 	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
 	if !ok {
-		return nil, status.Error(codes.Internal, errUserIDNotFound)
+		return nil, fmt.Errorf(contextError, status.Error(codes.Internal, errUserIDNotFound))
 	}
 
 	shortedLink, err := h.service.CreateShortLink(ctx, req.GetOriginalUrl(), userID)
 	if err != nil {
-		wrappedErr := fmt.Errorf("failed to create short link: %w", err)
-		return nil, status.Error(codes.Internal, wrappedErr.Error())
+		return nil, fmt.Errorf(serviceError, status.Errorf(codes.Internal, "failed to create short link: %v", err))
 	}
 
 	return &pb.CreateShortLinkResponse{
@@ -96,15 +99,16 @@ func (h *ShortenerGRPCHandler) CreateShortLinkBatch(
 	// Extract user ID from context (set by auth interceptor)
 	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
 	if !ok {
-		return nil, status.Error(codes.Internal, errUserIDNotFound)
+		return nil, fmt.Errorf(contextError, status.Error(codes.Internal, errUserIDNotFound))
 	}
 
 	// Convert gRPC request to service model
 	originalLinks := make([]*services.OriginalLink, 0, len(req.GetLinks()))
 	for _, link := range req.GetLinks() {
 		if link.GetOriginalUrl() == "" {
-			return nil, status.Error(codes.InvalidArgument, errOriginalURLRequired)
+			return nil, fmt.Errorf(validationErrorFormat, status.Error(codes.InvalidArgument, errOriginalURLRequired))
 		}
+
 		originalLinks = append(originalLinks, &services.OriginalLink{
 			CorelationID: link.GetCorrelationId(),
 			URL:          link.GetOriginalUrl(),
@@ -113,8 +117,7 @@ func (h *ShortenerGRPCHandler) CreateShortLinkBatch(
 
 	shortedLinks, err := h.service.CreateShortLinkBatch(ctx, originalLinks, userID)
 	if err != nil {
-		wrappedErr := fmt.Errorf("failed to create batch: %w", err)
-		return nil, status.Error(codes.Internal, wrappedErr.Error())
+		return nil, fmt.Errorf(serviceError, status.Errorf(codes.Internal, "failed to create batch: %v", err))
 	}
 
 	// Convert service response to gRPC response
@@ -132,21 +135,20 @@ func (h *ShortenerGRPCHandler) CreateShortLinkBatch(
 // GetURL retrieves the original URL by its short identifier.
 func (h *ShortenerGRPCHandler) GetURL(ctx context.Context, req *pb.GetURLRequest) (*pb.GetURLResponse, error) {
 	if req.GetShortId() == "" {
-		return nil, status.Error(codes.InvalidArgument, errShortIDRequired)
+		return nil, fmt.Errorf(validationErrorFormat, status.Error(codes.InvalidArgument, errShortIDRequired))
 	}
 
 	shortedLink, err := h.service.GetURL(ctx, req.GetShortId())
 	if err != nil {
-		wrappedErr := fmt.Errorf("failed to get URL: %w", err)
-		return nil, status.Error(codes.Internal, wrappedErr.Error())
+		return nil, fmt.Errorf(serviceError, status.Errorf(codes.Internal, "failed to get URL: %v", err))
 	}
 
 	if shortedLink == nil {
-		return nil, status.Error(codes.NotFound, errURLNotFound)
+		return nil, fmt.Errorf("not found error: %w", status.Error(codes.NotFound, errURLNotFound))
 	}
 
 	if shortedLink.IsDeleted {
-		return nil, status.Error(codes.FailedPrecondition, errURLRemoved)
+		return nil, fmt.Errorf("precondition error: %w", status.Error(codes.FailedPrecondition, errURLRemoved))
 	}
 
 	return &pb.GetURLResponse{
@@ -163,17 +165,16 @@ func (h *ShortenerGRPCHandler) GetAllByUserID(
 	// Extract user ID from context (set by auth interceptor)
 	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
 	if !ok {
-		return nil, status.Error(codes.Internal, errUserIDNotFound)
+		return nil, fmt.Errorf(contextError, status.Error(codes.Internal, errUserIDNotFound))
 	}
 
 	shortedLinks, err := h.service.GetAllByUserID(ctx, userID)
 	if err != nil {
-		wrappedErr := fmt.Errorf("failed to get user URLs: %w", err)
-		return nil, status.Error(codes.Internal, wrappedErr.Error())
+		return nil, fmt.Errorf(serviceError, status.Errorf(codes.Internal, "failed to get user URLs: %v", err))
 	}
 
 	if len(shortedLinks) == 0 {
-		return nil, status.Error(codes.NotFound, errUserURLsNotFound)
+		return nil, fmt.Errorf("not found error: %w", status.Error(codes.NotFound, errUserURLsNotFound))
 	}
 
 	// Convert service response to gRPC response
@@ -194,13 +195,13 @@ func (h *ShortenerGRPCHandler) DeleteBatch(
 	req *pb.DeleteBatchRequest,
 ) (*pb.DeleteBatchResponse, error) {
 	if len(req.GetShortUrls()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, errShortURLsEmpty)
+		return nil, fmt.Errorf(validationErrorFormat, status.Error(codes.InvalidArgument, errShortURLsEmpty))
 	}
 
 	// Extract user ID from context (set by auth interceptor)
 	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
 	if !ok {
-		return nil, status.Error(codes.Internal, errUserIDNotFound)
+		return nil, fmt.Errorf(contextError, status.Error(codes.Internal, errUserIDNotFound))
 	}
 
 	// Create channel for deletion
@@ -210,13 +211,13 @@ func (h *ShortenerGRPCHandler) DeleteBatch(
 	// Send deletion requests to channel
 	for _, shortURL := range req.GetShortUrls() {
 		if shortURL == "" {
-			return nil, status.Error(codes.InvalidArgument, errShortURLEmpty)
+			return nil, fmt.Errorf(validationErrorFormat, status.Error(codes.InvalidArgument, errShortURLEmpty))
 		}
 		deleteSID := services.NewDeleteShortID(shortURL, userID)
 		select {
 		case toDeleteChan <- deleteSID:
 		case <-ctx.Done():
-			return nil, status.Error(codes.DeadlineExceeded, errContextDeadline)
+			return nil, fmt.Errorf(contextError, status.Error(codes.DeadlineExceeded, errContextDeadline))
 		}
 	}
 
@@ -233,8 +234,7 @@ func (h *ShortenerGRPCHandler) GetStats(ctx context.Context, req *pb.GetStatsReq
 
 	stats, err := h.service.GetStats(ctx)
 	if err != nil {
-		wrappedErr := fmt.Errorf("failed to get stats: %w", err)
-		return nil, status.Error(codes.Internal, wrappedErr.Error())
+		return nil, fmt.Errorf(serviceError, status.Errorf(codes.Internal, "failed to get stats: %v", err))
 	}
 
 	return &pb.GetStatsResponse{
@@ -248,8 +248,7 @@ func (h *ShortenerGRPCHandler) Ping(ctx context.Context, req *pb.PingRequest) (*
 	// Check database connection if configured
 	err := h.healthService.PingDatabase(ctx)
 	if err != nil {
-		wrappedErr := fmt.Errorf("database not available: %w", err)
-		return nil, status.Error(codes.Unavailable, wrappedErr.Error())
+		return nil, fmt.Errorf("health check error: %w", status.Errorf(codes.Unavailable, "database not available: %v", err))
 	}
 
 	return &pb.PingResponse{Status: "OK"}, nil

@@ -144,7 +144,8 @@ func WithUnifiedGetStatsHandler(handler Handler) UnifiedServerOption {
 }
 
 // WithGRPCHandler устанавливает gRPC обработчик.
-func WithGRPCHandler(service handlers.ShorterService, deleteWorker handlers.DeleterWorker, baseURL string, opts *config.Options) UnifiedServerOption {
+func WithGRPCHandler(service handlers.ShorterService, deleteWorker handlers.DeleterWorker,
+	baseURL string, opts *config.Options) UnifiedServerOption {
 	return func(server *UnifiedShortenerServer) error {
 		server.grpcHandler = grpchandlers.NewShortenerGRPCHandler(service, deleteWorker, baseURL, opts)
 		return nil
@@ -298,10 +299,11 @@ func (server *UnifiedShortenerServer) runGRPCServer(ctx context.Context) error {
 		close(stopped)
 	}()
 
+	const timeout = 30 * time.Second
 	select {
 	case <-stopped:
 		log.Zap.Info("gRPC server shut down gracefully")
-	case <-time.After(30 * time.Second):
+	case <-time.After(timeout):
 		log.Zap.Warn("gRPC server graceful shutdown timeout, forcing stop")
 		grpcServer.Stop()
 	}
