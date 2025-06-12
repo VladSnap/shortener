@@ -261,11 +261,15 @@ func (server *UnifiedShortenerServer) runGRPCServer(ctx context.Context) error {
 	var grpcServer *grpc.Server
 	if server.opts.TrustedSubnet != "" {
 		// Add trusted subnet interceptor for stats endpoint
+		trustedSubnetConfig := interceptors.NewTrustedSubnetConfigWithSuffix(
+			server.opts.TrustedSubnet,
+			"GetStats",
+		)
 		grpcServer = grpc.NewServer(
 			grpc.ChainUnaryInterceptor(
 				interceptors.LoggingInterceptor(),
 				interceptors.AuthInterceptor(server.opts),
-				interceptors.TrustedSubnetInterceptor(server.opts.TrustedSubnet),
+				interceptors.TrustedSubnetInterceptor(trustedSubnetConfig),
 			),
 		)
 	} else {

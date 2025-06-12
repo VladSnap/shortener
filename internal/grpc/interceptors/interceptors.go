@@ -117,9 +117,25 @@ func LoggingInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-// TrustedSubnetInterceptor provides trusted subnet validation for gRPC.
-func TrustedSubnetInterceptor(trustedSubnet string) grpc.UnaryServerInterceptor {
-	_, subnet, _ := net.ParseCIDR(trustedSubnet)
+// TrustedSubnetConfig holds configuration for trusted subnet validation.
+type TrustedSubnetConfig struct {
+	// TrustedSubnet is the CIDR notation of the trusted subnet
+	TrustedSubnet string
+	// ProtectedMethods is a list of gRPC method names that require trusted subnet validation
+	// If empty, validation is applied to all methods
+	ProtectedMethods []string
+	// UseMethodSuffix when true, matches method names by suffix instead of exact match
+	UseMethodSuffix bool
+}
+
+// TrustedSubnetInterceptor provides configurable trusted subnet validation for gRPC.
+func TrustedSubnetInterceptor(config TrustedSubnetConfig) grpc.UnaryServerInterceptor {
+	_, subnet, err := net.ParseCIDR(config.TrustedSubnet)
+	if err != nil {
+		log.Zap.Error("failed to parse trusted subnet CIDR",
+			zap.String("subnet", config.TrustedSubnet),
+			zap.Error(err))
+	}
 
 	return func(
 		ctx context.Context,
@@ -127,8 +143,8 @@ func TrustedSubnetInterceptor(trustedSubnet string) grpc.UnaryServerInterceptor 
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
-		// Only apply to GetStats method
-		if !strings.HasSuffix(info.FullMethod, "GetStats") {
+		// Check if this method requires trusted subnet validation
+		if !shouldValidateMethod(info.FullMethod, config) {
 			return handler(ctx, req)
 		}
 
@@ -163,10 +179,46 @@ func TrustedSubnetInterceptor(trustedSubnet string) grpc.UnaryServerInterceptor 
 		}
 
 		if !subnet.Contains(ip) {
+			log.Zap.Warn("access denied: IP not in trusted subnet",
+				zap.String("method", info.FullMethod),
+				zap.String("client_ip", ip.String()),
+				zap.String("trusted_subnet", config.TrustedSubnet))
 			return nil, status.Error(codes.PermissionDenied, "IP address not in trusted subnet")
 		}
 
 		return handler(ctx, req)
+	}
+}
+
+// shouldValidateMethod determines if a method requires trusted subnet validation.
+func shouldValidateMethod(fullMethod string, config TrustedSubnetConfig) bool {
+	// If no protected methods are specified, validate all methods
+	if len(config.ProtectedMethods) == 0 {
+		return true
+	}
+
+	// Check each protected method
+	for _, protectedMethod := range config.ProtectedMethods {
+		if config.UseMethodSuffix {
+			if strings.HasSuffix(fullMethod, protectedMethod) {
+				return true
+			}
+		} else {
+			if fullMethod == protectedMethod || strings.HasSuffix(fullMethod, "/"+protectedMethod) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// NewTrustedSubnetConfigWithSuffix creates a new configuration that matches methods by suffix.
+func NewTrustedSubnetConfigWithSuffix(trustedSubnet string, methodSuffixes ...string) TrustedSubnetConfig {
+	return TrustedSubnetConfig{
+		TrustedSubnet:    trustedSubnet,
+		ProtectedMethods: methodSuffixes,
+		UseMethodSuffix:  true,
 	}
 }
 
