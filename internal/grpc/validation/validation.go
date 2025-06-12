@@ -23,12 +23,14 @@ func ValidateOriginalURL(originalURL string) error {
 	// Парсим URL
 	parsedURL, err := url.ParseRequestURI(originalURL)
 	if err != nil {
-		return fmt.Errorf(validationFailedErr, status.Errorf(codes.InvalidArgument, "invalid original_url format: %v", err))
+		return fmt.Errorf(validationFailedErr, status.Errorf(codes.InvalidArgument,
+			"invalid original_url format: %v", err))
 	}
 
 	// Проверяем наличие схемы и хоста
 	if parsedURL.Scheme == "" || parsedURL.Host == "" {
-		return fmt.Errorf(validationFailedErr, status.Error(codes.InvalidArgument, "original_url must contain schema and host"))
+		return fmt.Errorf(validationFailedErr, status.Error(codes.InvalidArgument,
+			"original_url must contain schema and host"))
 	}
 
 	return nil
@@ -41,7 +43,8 @@ func ValidateShortID(shortID string) error {
 	}
 
 	if utf8.RuneCountInString(shortID) != constants.ShortIDLength {
-		return fmt.Errorf(validationFailedErr, status.Errorf(codes.InvalidArgument, "short_id length must be %d", constants.ShortIDLength))
+		return fmt.Errorf(validationFailedErr, status.Errorf(codes.InvalidArgument,
+			"short_id length must be %d", constants.ShortIDLength))
 	}
 
 	return nil
@@ -54,7 +57,8 @@ func ValidateShortURL(shortURL string) error {
 	}
 
 	if utf8.RuneCountInString(shortURL) != constants.ShortIDLength {
-		return fmt.Errorf(validationFailedErr, status.Errorf(codes.InvalidArgument, "short_url length must be %d", constants.ShortIDLength))
+		return fmt.Errorf(validationFailedErr, status.Errorf(codes.InvalidArgument,
+			"short_url length must be %d", constants.ShortIDLength))
 	}
 
 	return nil
