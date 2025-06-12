@@ -6,7 +6,7 @@ import (
 	"net"
 
 	"github.com/VladSnap/shortener/internal/config"
-	"github.com/VladSnap/shortener/internal/constants"
+	grpcvalidation "github.com/VladSnap/shortener/internal/grpc/validation"
 	"github.com/VladSnap/shortener/internal/handlers"
 	"github.com/VladSnap/shortener/internal/services"
 	pb "github.com/VladSnap/shortener/proto"
@@ -19,21 +19,31 @@ const (
 	// Channel sizes for delete operations.
 	toDeleteChanSize = 100
 
-	// Error messages.
-	errUserIDNotFound      = "user ID not found in context"
-	errOriginalURLRequired = "original_url is required"
-	errShortIDRequired     = "short_id is required"
-	errURLNotFound         = "URL not found"
-	errURLRemoved          = "URL has been removed"
-	errUserURLsNotFound    = "URLs for user not found"
-	errShortURLsEmpty      = "short_urls cannot be empty"
-	errShortURLEmpty       = "short_url cannot be empty"
-	errContextDeadline     = "context deadline exceeded"
-
-	validationErrorFormat = "validation error: %w"
-	contextError          = "context error: %w"
-	serviceError          = "service error: %w"
+	// Error message formats for wrapping.
+	validationErrorFormat     = "validation failed: %w"
+	userExtractionErrorFormat = "user extraction failed: %w"
+	contextErrorFormat        = "context validation failed: %w"
+	urlLookupErrorFormat      = "URL lookup failed: %w"
+	urlAccessErrorFormat      = "URL access failed: %w"
+	userURLsLookupErrorFormat = "user URLs lookup failed: %w"
+	contextDeadlineFormat     = "context deadline exceeded: %w"
 )
+
+// handleServiceError обрабатывает ошибки сервиса и возвращает соответствующую gRPC ошибку.
+func handleServiceError(err error, operation string) error {
+	if err == nil {
+		return nil
+	}
+	return status.Errorf(codes.Internal, "failed to %s: %v", operation, err)
+}
+
+// handleDatabaseError обрабатывает ошибки базы данных.
+func handleDatabaseError(err error, message string) error {
+	if err == nil {
+		return nil
+	}
+	return status.Errorf(codes.Unavailable, "%s: %v", message, err)
+}
 
 // ShortenerGRPCHandler implements the gRPC service interface.
 type ShortenerGRPCHandler struct {
@@ -66,19 +76,18 @@ func (h *ShortenerGRPCHandler) CreateShortLink(
 	ctx context.Context,
 	req *pb.CreateShortLinkRequest,
 ) (*pb.CreateShortLinkResponse, error) {
-	if req.GetOriginalUrl() == "" {
-		return nil, fmt.Errorf(validationErrorFormat, status.Error(codes.InvalidArgument, errOriginalURLRequired))
+	if err := grpcvalidation.ValidateOriginalURL(req.GetOriginalUrl()); err != nil {
+		return nil, fmt.Errorf(validationErrorFormat, err)
 	}
 
-	// Extract user ID from context (set by auth interceptor)
-	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
-	if !ok {
-		return nil, fmt.Errorf(contextError, status.Error(codes.Internal, errUserIDNotFound))
+	userID, err := grpcvalidation.ExtractUserID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf(userExtractionErrorFormat, err)
 	}
 
 	shortedLink, err := h.service.CreateShortLink(ctx, req.GetOriginalUrl(), userID)
 	if err != nil {
-		return nil, fmt.Errorf(serviceError, status.Errorf(codes.Internal, "failed to create short link: %v", err))
+		return nil, handleServiceError(err, "create short link")
 	}
 
 	return &pb.CreateShortLinkResponse{
@@ -96,17 +105,16 @@ func (h *ShortenerGRPCHandler) CreateShortLinkBatch(
 		return &pb.CreateShortLinkBatchResponse{Links: []*pb.ShortedLinkBatch{}}, nil
 	}
 
-	// Extract user ID from context (set by auth interceptor)
-	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
-	if !ok {
-		return nil, fmt.Errorf(contextError, status.Error(codes.Internal, errUserIDNotFound))
+	userID, err := grpcvalidation.ExtractUserID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf(userExtractionErrorFormat, err)
 	}
 
 	// Convert gRPC request to service model
 	originalLinks := make([]*services.OriginalLink, 0, len(req.GetLinks()))
 	for _, link := range req.GetLinks() {
-		if link.GetOriginalUrl() == "" {
-			return nil, fmt.Errorf(validationErrorFormat, status.Error(codes.InvalidArgument, errOriginalURLRequired))
+		if err := grpcvalidation.ValidateOriginalURL(link.GetOriginalUrl()); err != nil {
+			return nil, fmt.Errorf(validationErrorFormat, err)
 		}
 
 		originalLinks = append(originalLinks, &services.OriginalLink{
@@ -117,7 +125,7 @@ func (h *ShortenerGRPCHandler) CreateShortLinkBatch(
 
 	shortedLinks, err := h.service.CreateShortLinkBatch(ctx, originalLinks, userID)
 	if err != nil {
-		return nil, fmt.Errorf(serviceError, status.Errorf(codes.Internal, "failed to create batch: %v", err))
+		return nil, handleServiceError(err, "create batch")
 	}
 
 	// Convert service response to gRPC response
@@ -134,21 +142,21 @@ func (h *ShortenerGRPCHandler) CreateShortLinkBatch(
 
 // GetURL retrieves the original URL by its short identifier.
 func (h *ShortenerGRPCHandler) GetURL(ctx context.Context, req *pb.GetURLRequest) (*pb.GetURLResponse, error) {
-	if req.GetShortId() == "" {
-		return nil, fmt.Errorf(validationErrorFormat, status.Error(codes.InvalidArgument, errShortIDRequired))
+	if err := grpcvalidation.ValidateShortID(req.GetShortId()); err != nil {
+		return nil, fmt.Errorf(validationErrorFormat, err)
 	}
 
 	shortedLink, err := h.service.GetURL(ctx, req.GetShortId())
 	if err != nil {
-		return nil, fmt.Errorf(serviceError, status.Errorf(codes.Internal, "failed to get URL: %v", err))
+		return nil, handleServiceError(err, "get URL")
 	}
 
 	if shortedLink == nil {
-		return nil, fmt.Errorf("not found error: %w", status.Error(codes.NotFound, errURLNotFound))
+		return nil, fmt.Errorf(urlLookupErrorFormat, status.Error(codes.NotFound, "URL not found"))
 	}
 
 	if shortedLink.IsDeleted {
-		return nil, fmt.Errorf("precondition error: %w", status.Error(codes.FailedPrecondition, errURLRemoved))
+		return nil, fmt.Errorf(urlAccessErrorFormat, status.Error(codes.FailedPrecondition, "URL has been removed"))
 	}
 
 	return &pb.GetURLResponse{
@@ -162,19 +170,18 @@ func (h *ShortenerGRPCHandler) GetAllByUserID(
 	ctx context.Context,
 	req *pb.GetAllByUserIDRequest,
 ) (*pb.GetAllByUserIDResponse, error) {
-	// Extract user ID from context (set by auth interceptor)
-	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
-	if !ok {
-		return nil, fmt.Errorf(contextError, status.Error(codes.Internal, errUserIDNotFound))
+	userID, err := grpcvalidation.ExtractUserID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf(userExtractionErrorFormat, err)
 	}
 
 	shortedLinks, err := h.service.GetAllByUserID(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf(serviceError, status.Errorf(codes.Internal, "failed to get user URLs: %v", err))
+		return nil, handleServiceError(err, "get user URLs")
 	}
 
 	if len(shortedLinks) == 0 {
-		return nil, fmt.Errorf("not found error: %w", status.Error(codes.NotFound, errUserURLsNotFound))
+		return nil, fmt.Errorf(userURLsLookupErrorFormat, status.Error(codes.NotFound, "URLs for user not found"))
 	}
 
 	// Convert service response to gRPC response
@@ -194,14 +201,13 @@ func (h *ShortenerGRPCHandler) DeleteBatch(
 	ctx context.Context,
 	req *pb.DeleteBatchRequest,
 ) (*pb.DeleteBatchResponse, error) {
-	if len(req.GetShortUrls()) == 0 {
-		return nil, fmt.Errorf(validationErrorFormat, status.Error(codes.InvalidArgument, errShortURLsEmpty))
+	if err := grpcvalidation.ValidateShortURLs(req.GetShortUrls()); err != nil {
+		return nil, fmt.Errorf(validationErrorFormat, err)
 	}
 
-	// Extract user ID from context (set by auth interceptor)
-	userID, ok := ctx.Value(constants.UserIDContextKey).(string)
-	if !ok {
-		return nil, fmt.Errorf(contextError, status.Error(codes.Internal, errUserIDNotFound))
+	userID, err := grpcvalidation.ExtractUserID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf(userExtractionErrorFormat, err)
 	}
 
 	// Create channel for deletion
@@ -210,14 +216,16 @@ func (h *ShortenerGRPCHandler) DeleteBatch(
 
 	// Send deletion requests to channel
 	for _, shortURL := range req.GetShortUrls() {
-		if shortURL == "" {
-			return nil, fmt.Errorf(validationErrorFormat, status.Error(codes.InvalidArgument, errShortURLEmpty))
+		if err := grpcvalidation.ValidateContextDeadline(ctx); err != nil {
+			return nil, fmt.Errorf(contextErrorFormat, err)
 		}
+
 		deleteSID := services.NewDeleteShortID(shortURL, userID)
 		select {
 		case toDeleteChan <- deleteSID:
 		case <-ctx.Done():
-			return nil, fmt.Errorf(contextError, status.Error(codes.DeadlineExceeded, errContextDeadline))
+			return nil, fmt.Errorf(contextDeadlineFormat,
+				status.Error(codes.DeadlineExceeded, "context deadline exceeded"))
 		}
 	}
 
@@ -234,7 +242,7 @@ func (h *ShortenerGRPCHandler) GetStats(ctx context.Context, req *pb.GetStatsReq
 
 	stats, err := h.service.GetStats(ctx)
 	if err != nil {
-		return nil, fmt.Errorf(serviceError, status.Errorf(codes.Internal, "failed to get stats: %v", err))
+		return nil, handleServiceError(err, "get stats")
 	}
 
 	return &pb.GetStatsResponse{
@@ -248,7 +256,7 @@ func (h *ShortenerGRPCHandler) Ping(ctx context.Context, req *pb.PingRequest) (*
 	// Check database connection if configured
 	err := h.healthService.PingDatabase(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("health check error: %w", status.Errorf(codes.Unavailable, "database not available: %v", err))
+		return nil, handleDatabaseError(err, "database not available")
 	}
 
 	return &pb.PingResponse{Status: "OK"}, nil
