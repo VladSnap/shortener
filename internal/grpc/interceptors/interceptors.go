@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -21,14 +22,84 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// InterceptorFunc represents a function that performs interceptor logic.
+type InterceptorFunc func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error)
+
+// withErrorHandling wraps an interceptor function with common error handling and panic recovery.
+func withErrorHandling(name string, interceptorFunc InterceptorFunc) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		// Panic recovery
+		defer func() {
+			if r := recover(); r != nil {
+				log.Zap.Error("panic in gRPC interceptor",
+					zap.String("interceptor", name),
+					zap.String("method", info.FullMethod),
+					zap.Any("panic", r),
+					zap.String("stack", string(debug.Stack())))
+
+				// Convert panic to gRPC error
+				err = status.Error(codes.Internal, "internal server error")
+				resp = nil
+			}
+		}()
+
+		// Call the actual interceptor logic
+		return interceptorFunc(ctx, req, info, handler)
+	}
+}
+
+// extractClientInfo extracts client information from context for logging and validation.
+type ClientInfo struct {
+	Addr     string
+	RealIP   string
+	Metadata string
+}
+
+// extractClientInfo gets client information from gRPC context.
+func extractClientInfo(ctx context.Context) ClientInfo {
+	info := ClientInfo{
+		Addr: "unknown",
+	}
+
+	// Extract peer info
+	if peerInfo, ok := peer.FromContext(ctx); ok && peerInfo != nil {
+		info.Addr = peerInfo.Addr.String()
+	}
+
+	// Extract metadata
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		info.Metadata = formatMetadata(md)
+
+		// Check for X-Real-IP in metadata (for proxy scenarios)
+		if realIPs := md.Get("x-real-ip"); len(realIPs) > 0 {
+			info.RealIP = realIPs[0]
+		}
+	}
+
+	return info
+}
+
+// getClientIP returns the real client IP, considering proxy headers.
+func getClientIP(ctx context.Context) (string, error) {
+	clientInfo := extractClientInfo(ctx)
+
+	// Use real IP if available
+	if clientInfo.RealIP != "" {
+		return clientInfo.RealIP, nil
+	}
+
+	// Parse the client address from peer info
+	host, _, err := net.SplitHostPort(clientInfo.Addr)
+	if err != nil {
+		return "", fmt.Errorf("invalid client address: %w", err)
+	}
+
+	return host, nil
+}
+
 // AuthInterceptor provides authentication functionality for gRPC.
 func AuthInterceptor(opts *config.Options) grpc.UnaryServerInterceptor {
-	return func(
-		ctx context.Context,
-		req interface{},
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,
-	) (interface{}, error) {
+	return withErrorHandling("auth", func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// Extract metadata from context
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
@@ -51,43 +122,32 @@ func AuthInterceptor(opts *config.Options) grpc.UnaryServerInterceptor {
 
 		// Verify the signed cookie
 		if _, err := auth.VerifySignCookie(authCookie, opts.AuthCookieKey); err != nil {
-			log.Zap.Warn("failed to verify gRPC auth cookie", zap.Error(err))
+			log.Zap.Warn("failed to verify gRPC auth cookie",
+				zap.Error(err),
+				zap.String("method", info.FullMethod))
 			return nil, status.Error(codes.Unauthenticated, "invalid authentication")
 		}
 
 		// Decode the cookie to get user ID
 		authData, err := auth.DecodeCookie(authCookie)
 		if err != nil {
-			log.Zap.Warn("failed to decode gRPC auth cookie", zap.Error(err))
+			log.Zap.Warn("failed to decode gRPC auth cookie",
+				zap.Error(err),
+				zap.String("method", info.FullMethod))
 			return nil, status.Error(codes.Unauthenticated, "invalid authentication data")
 		}
 
 		// Add user ID to context
 		ctx = context.WithValue(ctx, constants.UserIDContextKey, authData.UserID)
 		return handler(ctx, req)
-	}
+	})
 }
 
 // LoggingInterceptor provides logging functionality for gRPC.
 func LoggingInterceptor() grpc.UnaryServerInterceptor {
-	return func(
-		ctx context.Context,
-		req interface{},
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,
-	) (interface{}, error) {
+	return withErrorHandling("logging", func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		start := time.Now()
-
-		// Extract metadata for logging
-		md, _ := metadata.FromIncomingContext(ctx)
-		metadataStr := formatMetadata(md)
-
-		// Extract peer info
-		peerInfo, _ := peer.FromContext(ctx)
-		clientAddr := "unknown"
-		if peerInfo != nil {
-			clientAddr = peerInfo.Addr.String()
-		}
+		clientInfo := extractClientInfo(ctx)
 
 		// Call the handler
 		resp, err := handler(ctx, req)
@@ -106,15 +166,16 @@ func LoggingInterceptor() grpc.UnaryServerInterceptor {
 		// Log the request
 		log.Zap.Info("gRPC Request",
 			zap.String("method", info.FullMethod),
-			zap.String("client_addr", clientAddr),
+			zap.String("client_addr", clientInfo.Addr),
+			zap.String("real_ip", clientInfo.RealIP),
 			zap.String("status", grpcStatus.String()),
 			zap.Duration("duration", duration),
-			zap.String("metadata", metadataStr),
+			zap.String("metadata", clientInfo.Metadata),
 			zap.Error(err),
 		)
 
 		return resp, err
-	}
+	})
 }
 
 // TrustedSubnetConfig holds configuration for trusted subnet validation.
@@ -137,12 +198,7 @@ func TrustedSubnetInterceptor(config TrustedSubnetConfig) grpc.UnaryServerInterc
 			zap.Error(err))
 	}
 
-	return func(
-		ctx context.Context,
-		req interface{},
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,
-	) (interface{}, error) {
+	return withErrorHandling("trusted-subnet", func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// Check if this method requires trusted subnet validation
 		if !shouldValidateMethod(info.FullMethod, config) {
 			return handler(ctx, req)
@@ -152,28 +208,16 @@ func TrustedSubnetInterceptor(config TrustedSubnetConfig) grpc.UnaryServerInterc
 			return nil, status.Error(codes.PermissionDenied, "trusted subnet not configured")
 		}
 
-		// Extract client IP from peer info
-		peerInfo, ok := peer.FromContext(ctx)
-		if !ok {
-			return nil, status.Error(codes.PermissionDenied, "unable to get client address")
-		}
-
-		// Parse the client address
-		host, _, err := net.SplitHostPort(peerInfo.Addr.String())
+		// Get client IP using helper function
+		clientIP, err := getClientIP(ctx)
 		if err != nil {
-			return nil, status.Error(codes.PermissionDenied, "invalid client address")
+			log.Zap.Warn("failed to extract client IP",
+				zap.String("method", info.FullMethod),
+				zap.Error(err))
+			return nil, status.Error(codes.PermissionDenied, "unable to determine client address")
 		}
 
-		// Check if we have X-Real-IP in metadata (for proxy scenarios)
-		md, ok := metadata.FromIncomingContext(ctx)
-		if ok {
-			realIPs := md.Get("x-real-ip")
-			if len(realIPs) > 0 {
-				host = realIPs[0]
-			}
-		}
-
-		ip := net.ParseIP(host)
+		ip := net.ParseIP(clientIP)
 		if ip == nil {
 			return nil, status.Error(codes.PermissionDenied, "invalid IP address")
 		}
@@ -187,7 +231,7 @@ func TrustedSubnetInterceptor(config TrustedSubnetConfig) grpc.UnaryServerInterc
 		}
 
 		return handler(ctx, req)
-	}
+	})
 }
 
 // shouldValidateMethod determines if a method requires trusted subnet validation.
@@ -220,6 +264,12 @@ func NewTrustedSubnetConfigWithSuffix(trustedSubnet string, methodSuffixes ...st
 		ProtectedMethods: methodSuffixes,
 		UseMethodSuffix:  true,
 	}
+}
+
+// ChainInterceptors chains multiple interceptors with error handling.
+// This is a convenience function that returns a ServerOption for use with grpc.NewServer.
+func ChainInterceptors(interceptors ...grpc.UnaryServerInterceptor) grpc.ServerOption {
+	return grpc.ChainUnaryInterceptor(interceptors...)
 }
 
 // generateNewUserID creates a new UUID for unauthenticated users.
