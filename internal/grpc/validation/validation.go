@@ -12,21 +12,23 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var validationFailedErr = "validation failed: %w"
+
 // ValidateOriginalURL проверяет корректность оригинальной URL.
 func ValidateOriginalURL(originalURL string) error {
 	if originalURL == "" {
-		return fmt.Errorf("validation failed: %w", status.Error(codes.InvalidArgument, "original_url is required"))
+		return fmt.Errorf(validationFailedErr, status.Error(codes.InvalidArgument, "original_url is required"))
 	}
 
 	// Парсим URL
 	parsedURL, err := url.ParseRequestURI(originalURL)
 	if err != nil {
-		return fmt.Errorf("validation failed: %w", status.Errorf(codes.InvalidArgument, "invalid original_url format: %v", err))
+		return fmt.Errorf(validationFailedErr, status.Errorf(codes.InvalidArgument, "invalid original_url format: %v", err))
 	}
 
 	// Проверяем наличие схемы и хоста
 	if parsedURL.Scheme == "" || parsedURL.Host == "" {
-		return fmt.Errorf("validation failed: %w", status.Error(codes.InvalidArgument, "original_url must contain schema and host"))
+		return fmt.Errorf(validationFailedErr, status.Error(codes.InvalidArgument, "original_url must contain schema and host"))
 	}
 
 	return nil
@@ -35,11 +37,11 @@ func ValidateOriginalURL(originalURL string) error {
 // ValidateShortID проверяет корректность короткого ID.
 func ValidateShortID(shortID string) error {
 	if shortID == "" {
-		return fmt.Errorf("validation failed: %w", status.Error(codes.InvalidArgument, "short_id is required"))
+		return fmt.Errorf(validationFailedErr, status.Error(codes.InvalidArgument, "short_id is required"))
 	}
 
 	if utf8.RuneCountInString(shortID) != constants.ShortIDLength {
-		return fmt.Errorf("validation failed: %w", status.Errorf(codes.InvalidArgument, "short_id length must be %d", constants.ShortIDLength))
+		return fmt.Errorf(validationFailedErr, status.Errorf(codes.InvalidArgument, "short_id length must be %d", constants.ShortIDLength))
 	}
 
 	return nil
@@ -48,11 +50,11 @@ func ValidateShortID(shortID string) error {
 // ValidateShortURL проверяет корректность короткой URL.
 func ValidateShortURL(shortURL string) error {
 	if shortURL == "" {
-		return fmt.Errorf("validation failed: %w", status.Error(codes.InvalidArgument, "short_url cannot be empty"))
+		return fmt.Errorf(validationFailedErr, status.Error(codes.InvalidArgument, "short_url cannot be empty"))
 	}
 
 	if utf8.RuneCountInString(shortURL) != constants.ShortIDLength {
-		return fmt.Errorf("validation failed: %w", status.Errorf(codes.InvalidArgument, "short_url length must be %d", constants.ShortIDLength))
+		return fmt.Errorf(validationFailedErr, status.Errorf(codes.InvalidArgument, "short_url length must be %d", constants.ShortIDLength))
 	}
 
 	return nil
@@ -61,12 +63,12 @@ func ValidateShortURL(shortURL string) error {
 // ValidateShortURLs проверяет массив коротких URL.
 func ValidateShortURLs(shortURLs []string) error {
 	if len(shortURLs) == 0 {
-		return fmt.Errorf("validation failed: %w", status.Error(codes.InvalidArgument, "short_urls cannot be empty"))
+		return fmt.Errorf(validationFailedErr, status.Error(codes.InvalidArgument, "short_urls cannot be empty"))
 	}
 
 	for _, shortURL := range shortURLs {
 		if err := ValidateShortURL(shortURL); err != nil {
-			return fmt.Errorf("validation failed: %w", err)
+			return fmt.Errorf(validationFailedErr, err)
 		}
 	}
 
