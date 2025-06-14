@@ -3,6 +3,8 @@ package validation
 
 import (
 	"errors"
+	"fmt"
+	"net"
 
 	"github.com/VladSnap/shortener/internal/config"
 )
@@ -21,6 +23,13 @@ func (vld *OptionsValidator) Validate(opts *config.Options) error {
 
 	if opts.AuthCookieKey == "" {
 		return errors.New("incorrect -k argument, it should not be empty")
+	}
+
+	if opts.TrustedSubnet != "" {
+		_, _, err := net.ParseCIDR(opts.TrustedSubnet)
+		if err != nil {
+			return fmt.Errorf("incorrect TrustedSubnet format, not valid CIDR: %w", err)
+		}
 	}
 
 	return nil

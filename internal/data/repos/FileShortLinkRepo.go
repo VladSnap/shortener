@@ -109,6 +109,12 @@ func (repo *FileShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []data.
 	return nil
 }
 
+// GetStats - Получает статистику о пользователях и всех ссылках.
+func (repo *FileShortLinkRepo) GetStats(ctx context.Context) (*data.StatsData, error) {
+	data := data.NewStatsData(len(repo.links), repo.calcAllUsers())
+	return data, nil
+}
+
 // Close - Закрывает файл.
 func (repo *FileShortLinkRepo) Close() error {
 	err := repo.storageFile.Close()
@@ -212,4 +218,14 @@ func (repo *FileShortLinkRepo) loadLinks() (map[string]*data.ShortLinkData, erro
 		linkMap[link.ShortURL] = link
 	}
 	return linkMap, nil
+}
+
+func (repo *FileShortLinkRepo) calcAllUsers() int {
+	users := make(map[string]bool)
+
+	for _, l := range repo.links {
+		users[l.UserID] = true
+	}
+
+	return len(users)
 }

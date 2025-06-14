@@ -33,6 +33,10 @@ type Options struct {
 	Performance *bool `json:"-"`
 	// ConfigPath path to config file
 	ConfigPath string `env:"CONFIG" json:"-"`
+	// TrustedSubnet - Trusted subnet for access to statistics
+	TrustedSubnet string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
+	// GRPCAddress - gRPC server listen address
+	GRPCAddress string `env:"GRPC_ADDRESS" json:"grpc_address,omitempty"`
 }
 
 // MarshalLogObject - Сериализует структуру конфига для эффективного логирования.
@@ -53,6 +57,8 @@ func (opts *Options) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 	enc.AddString("AuthCookieKey", opts.AuthCookieKey)
 	enc.AddString("ConfigPath", opts.ConfigPath)
+	enc.AddString("TrustedSubnet", opts.TrustedSubnet)
+	enc.AddString("GRPCAddress", opts.GRPCAddress)
 	return nil
 }
 
@@ -131,6 +137,8 @@ func ParseFlags(opts *Options, validater ConfigValidater) {
 		*opts.EnableHTTPS = v
 	}))
 	flag.StringVar(&opts.ConfigPath, "c", "", "path to config file")
+	flag.StringVar(&opts.TrustedSubnet, "t", "", "trusted subnet for access to statistics")
+	flag.StringVar(&opts.GRPCAddress, "g", "", "gRPC server listen address")
 
 	flag.Parse()
 }
@@ -190,6 +198,12 @@ func mergeOptions(flagEnvOpts, fileOpts *Options) *Options {
 	if merged.ConfigPath == "" && fileOpts.ConfigPath != "" {
 		merged.ConfigPath = fileOpts.ConfigPath
 	}
+	if merged.TrustedSubnet == "" && fileOpts.TrustedSubnet != "" {
+		merged.TrustedSubnet = fileOpts.TrustedSubnet
+	}
+	if merged.GRPCAddress == "" && fileOpts.GRPCAddress != "" {
+		merged.GRPCAddress = fileOpts.GRPCAddress
+	}
 	return &merged
 }
 
@@ -203,5 +217,8 @@ func setDefaultOptions(opts *Options) {
 	}
 	if opts.AuthCookieKey == "" {
 		opts.AuthCookieKey = "testsecret"
+	}
+	if opts.GRPCAddress == "" {
+		opts.GRPCAddress = ":9090"
 	}
 }

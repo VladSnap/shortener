@@ -54,3 +54,19 @@ func (repo *InMemoryShortLinkRepo) DeleteBatch(ctx context.Context, shortIDs []d
 	}
 	return nil
 }
+
+// GetStats - Получает статистику о пользователях и всех ссылках.
+func (repo *InMemoryShortLinkRepo) GetStats(ctx context.Context) (*data.StatsData, error) {
+	data := data.NewStatsData(len(repo.links), repo.calcAllUsers())
+	return data, nil
+}
+
+func (repo *InMemoryShortLinkRepo) calcAllUsers() int {
+	users := make(map[string]bool)
+
+	for _, l := range repo.links {
+		users[l.UserID] = true
+	}
+
+	return len(users)
+}
